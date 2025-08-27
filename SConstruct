@@ -67,6 +67,12 @@ AddOption('--stock-ui',
           default=False,
           help='Build stock openpilot UI instead of sunnypilot UI')
 
+AddOption('--no-ui-installer',
+          action='store_true',
+          dest='no_installer',
+          default=False,
+          help='Skip installer compilation (useful when raylib has compatibility issues)')
+
 ## Architecture name breakdown (arch)
 ## - larch64: linux tici aarch64
 ## - aarch64: linux pc aarch64

@@ -106,7 +106,10 @@ Pipfile
 .history
 .ionide
 
+.vscode/
+
 ### JetBrains ###
 !.idea/customTargets.xml
 !.idea/tools/*
 !.run/*
+
