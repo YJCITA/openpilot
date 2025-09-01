@@ -71,10 +71,16 @@ def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
 
 def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
+    # -YJ-
+    STOP_DISTANCE = 5.0
     return 1.75
   elif personality==log.LongitudinalPersonality.standard:
+    # -YJ-
+    STOP_DISTANCE = 4.0
     return 1.45
   elif personality==log.LongitudinalPersonality.aggressive:
+    # -YJ-
+    STOP_DISTANCE = 3.0
     return 1.25
   else:
     raise NotImplementedError("Longitudinal personality not supported")
