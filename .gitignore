@@ -107,6 +107,7 @@ Pipfile
 .ionide
 
 .vscode/
+tools/plotjuggler_yj/
 
 ### JetBrains ###
 !.idea/customTargets.xml

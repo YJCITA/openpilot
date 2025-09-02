@@ -32,7 +32,7 @@ class LongitudinalPlannerSP:
   def update(self, sm: messaging.SubMaster) -> None:
     self.dec.update(sm)
 
-  def publish_longitudinal_plan_sp(self, sm: messaging.SubMaster, pm: messaging.PubMaster) -> None:
+  def publish_longitudinal_plan_sp(self, sm: messaging.SubMaster, pm: messaging.PubMaster, mpc=None) -> None:
     plan_sp_send = messaging.new_message('longitudinalPlanSP')
 
     plan_sp_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
@@ -44,5 +44,13 @@ class LongitudinalPlannerSP:
     dec.state = DecState.blended if self.dec.mode() == 'blended' else DecState.acc
     dec.enabled = self.dec.enabled()
     dec.active = self.dec.active()
+    # mpc debug
+    if mpc is not None:
+      mpcDebug =longitudinalPlanSP.mpcDebug
+      mpcDebug.stopDis = mpc.STOP_DISTANCE
+      mpcDebug.lead0Dis = mpc.lead_0_obstacle[0]
+      mpcDebug.lead1Dis = mpc.lead_1_obstacle[0]
+      mpcDebug.accSafeObjDis = mpc.acc_safe_obstacle_distance
+      mpcDebug.tFellow = mpc.t_follow
 
     pm.send('longitudinalPlanSP', plan_sp_send)

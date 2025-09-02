@@ -122,6 +122,7 @@ struct ModelManagerSP @0xaedffd8f31e7b55d {
 
 struct LongitudinalPlanSP @0xf35cc4560bbf6ec2 {
   dec @0 :DynamicExperimentalControl;
+  mpc @1 :MpcDebug;
 
   struct DynamicExperimentalControl {
     state @0 :DynamicExperimentalControlState;
@@ -132,6 +133,15 @@ struct LongitudinalPlanSP @0xf35cc4560bbf6ec2 {
       acc @0;
       blended @1;
     }
+  }
+
+  struct MpcDebug {
+    stopDis @0 :Float32;
+    lead0Dis @1 :Float32;
+    lead1Dis @2 :Float32;
+    accSafeObjDis @3 :Float32;
+    tFellow @4 :Float32;
+    
   }
 }
 

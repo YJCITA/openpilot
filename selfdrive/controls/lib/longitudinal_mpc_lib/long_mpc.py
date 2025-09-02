@@ -235,6 +235,13 @@ class LongitudinalMpc:
     self.reset()
     self.source = SOURCES[2]
 
+    # -YJ-
+    self.STOP_DISTANCE = STOP_DISTANCE
+    self.acc_safe_obstacle_distance = 0.0
+    self.lead_0_obstacle = 0.0
+    self.lead_1_obstacle = 0.0
+    self.t_follow = 0.0
+
   def reset(self):
     # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.solver.reset()
@@ -347,6 +354,12 @@ class LongitudinalMpc:
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
+    # -YJ-
+    self.STOP_DISTANCE = STOP_DISTANCE
+    self.t_follow = t_follow
+    self.lead_0_obstacle = lead_0_obstacle
+    self.lead_1_obstacle = lead_1_obstacle
+
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = ACCEL_MAX
 
@@ -362,6 +375,8 @@ class LongitudinalMpc:
       v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                  v_lower,
                                  v_upper)
+      # -YJ-
+      self.acc_safe_obstacle_distance = get_safe_obstacle_distance(v_cruise_clipped, t_follow)
       cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, t_follow)
       x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
       self.source = SOURCES[np.argmin(x_obstacles[0])]
