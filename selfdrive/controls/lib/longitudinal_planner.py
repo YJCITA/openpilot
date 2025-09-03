@@ -210,4 +210,4 @@ class LongitudinalPlanner(LongitudinalPlannerSP):
 
     pm.send('longitudinalPlan', plan_send)
 
-    self.publish_longitudinal_plan_sp(sm, pm)
+    self.publish_longitudinal_plan_sp(sm, pm, self.mpc)

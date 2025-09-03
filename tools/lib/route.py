@@ -35,8 +35,11 @@ class Route:
   @property
   def metadata(self):
     if not self._metadata:
-      api = CommaApi(get_token())
-      self._metadata = api.get('v1/route/' + self.name.canonical_name)
+      try:
+          api = CommaApi(get_token())
+          self._metadata = api.get('v1/route/' + self.name.canonical_name)
+      except Exception as e:
+        tt =1
     return self._metadata
 
   @property
@@ -133,6 +136,11 @@ class Route:
           segment_name = f'{self.name.canonical_name}--{seg_num}'
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
+      elif f.startswith(self.name.time_str):
+        # adjust for no route name in file name   -YJ-
+        segment_name = f'{self.name.dongle_id}|{f}'
+        for seg_f in os.listdir(os.path.join(fullpath)):
+          segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
 
     segments = []
     for segment, files in segment_files.items():
@@ -167,7 +175,8 @@ class Route:
       except StopIteration:
         qcamera_path = None
 
-      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path, self.metadata['url']))
+      #segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path, self.metadata['url']))
+      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
 
     if len(segments) == 0:
       raise ValueError(f'Could not find segments for route {self.name.canonical_name} in data directory {data_dir}')
@@ -175,10 +184,10 @@ class Route:
 
 
 class Segment:
-  def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path, url):
+  def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path, url=None):
     self._events = None
     self._name = SegmentName(name)
-    self.url = f'{url}/{self._name.segment_num}'
+    self.url = f'{url}/{self._name.segment_num}' if url else None
     self.log_path = log_path
     self.qlog_path = qlog_path
     self.camera_path = camera_path
