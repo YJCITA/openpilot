@@ -46,11 +46,11 @@ class LongitudinalPlannerSP:
     dec.active = self.dec.active()
     # mpc debug
     if mpc is not None:
-      mpcDebug =longitudinalPlanSP.mpcDebug
+      mpcDebug =longitudinalPlanSP.mpc
       mpcDebug.stopDis = mpc.STOP_DISTANCE
-      mpcDebug.lead0Dis = mpc.lead_0_obstacle[0]
-      mpcDebug.lead1Dis = mpc.lead_1_obstacle[0]
-      mpcDebug.accSafeObjDis = mpc.acc_safe_obstacle_distance
+      mpcDebug.accSafeObjDis = (float)(mpc.acc_safe_obstacle_distance[0])
+      mpcDebug.lead0Dis = (float)(mpc.lead_0_obstacle[0])
+      mpcDebug.lead1Dis = (float)(mpc.lead_1_obstacle[0])
       mpcDebug.tFellow = mpc.t_follow
 
     pm.send('longitudinalPlanSP', plan_sp_send)
