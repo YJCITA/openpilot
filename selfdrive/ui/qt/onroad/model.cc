@@ -24,7 +24,9 @@ void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   drawLaneLines(painter);
   drawPath(painter, model, surface_rect);
 
-  if (longitudinal_control && sm.alive("radarState")) {
+// -YJ-   longitudinal_control is false, don't know why ?
+//   if (longitudinal_control && sm.alive("radarState")) {
+if (sm.alive("radarState")) {
     update_leads(radar_state, model.getPosition());
     const auto &lead_two = radar_state.getLeadTwo();
     if (lead_one.getStatus()) {
