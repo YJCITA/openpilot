@@ -25,8 +25,8 @@ void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   drawPath(painter, model, surface_rect);
 
 // -YJ-   longitudinal_control is false, don't know why ?
-//   if (longitudinal_control && sm.alive("radarState")) {
-if (sm.alive("radarState")) {
+  if (longitudinal_control && sm.alive("radarState")) {
+// if (sm.alive("radarState")) {
     update_leads(radar_state, model.getPosition());
     const auto &lead_two = radar_state.getLeadTwo();
     if (lead_one.getStatus()) {
@@ -35,8 +35,8 @@ if (sm.alive("radarState")) {
     if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
       drawLead(painter, lead_two, lead_vertices[1], surface_rect);
     }
+    drawLeadStatus(painter, surface_rect.height(), surface_rect.width());
   }
-  drawLeadStatus(painter, surface_rect.height(), surface_rect.width());
 
   painter.restore();
 }
