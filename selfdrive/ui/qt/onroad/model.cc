@@ -24,9 +24,7 @@ void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   drawLaneLines(painter);
   drawPath(painter, model, surface_rect);
 
-// -YJ-   longitudinal_control is false, don't know why ?
   if (longitudinal_control && sm.alive("radarState")) {
-// if (sm.alive("radarState")) {
     update_leads(radar_state, model.getPosition());
     const auto &lead_two = radar_state.getLeadTwo();
     if (lead_one.getStatus()) {
@@ -287,7 +285,7 @@ void ModelRenderer::drawLeadStatusAtPosition(QPainter &painter,
 
     // Position text below chevron, centered horizontally
     float text_x = chevron_pos.x() - str_w / 2;
-    float text_y = chevron_pos.y() + sz + 15;
+    float text_y = chevron_pos.y() - sz - 15;
 
     // Clamp to screen bounds
     text_x = std::clamp(text_x, 10.0f, (float)width - str_w - 10);
