@@ -24,7 +24,8 @@ void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   drawLaneLines(painter);
   drawPath(painter, model, surface_rect);
 
-  if (longitudinal_control && sm.alive("radarState")) {
+//   if (longitudinal_control && sm.alive("radarState")) {
+  if (sm.alive("radarState")) {
     update_leads(radar_state, model.getPosition());
     const auto &lead_two = radar_state.getLeadTwo();
     if (lead_one.getStatus()) {
@@ -33,7 +34,7 @@ void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
     if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
       drawLead(painter, lead_two, lead_vertices[1], surface_rect);
     }
-    drawLeadStatus(painter, surface_rect.height(), surface_rect.width());
+    drawLeadStatus(painter, surface_rect.height(), surface_rect.width(), surface_rect);
   }
 
   painter.restore();
@@ -175,7 +176,7 @@ QColor ModelRenderer::blendColors(const QColor &start, const QColor &end, float 
 }
 
 
-void ModelRenderer::drawLeadStatus(QPainter &painter, int height, int width) {
+void ModelRenderer::drawLeadStatus(QPainter &painter, int height, int width, const QRect &surface_rect) {
     auto *s = uiState();
     auto &sm = *(s->sm);
 
@@ -200,11 +201,11 @@ void ModelRenderer::drawLeadStatus(QPainter &painter, int height, int width) {
 
     // Draw status for each lead vehicle under its chevron
     if (true) {
-        drawLeadStatusAtPosition(painter, lead_one, lead_vertices[0], height, width, "L1");
+        drawLeadStatusAtPosition(painter, lead_one, lead_vertices[0], height, width, "L1", surface_rect);
     }
 
     if (has_lead_two && std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0) {
-        drawLeadStatusAtPosition(painter, lead_two, lead_vertices[1], height, width, "L2");
+        drawLeadStatusAtPosition(painter, lead_two, lead_vertices[1], height, width, "L2", surface_rect);
     }
 }
 
@@ -212,7 +213,8 @@ void ModelRenderer::drawLeadStatusAtPosition(QPainter &painter,
                                            const cereal::RadarState::LeadData::Reader &lead_data,
                                            const QPointF &chevron_pos,
                                            int height, int width,
-                                           const QString &label) {
+                                           const QString &label,
+                                           const QRect &surface_rect) {
 
     float d_rel = lead_data.getDRel();
     float v_rel = lead_data.getVRel();
@@ -249,7 +251,7 @@ void ModelRenderer::drawLeadStatusAtPosition(QPainter &painter,
         if (!is_metric) {
             val *= 3.28084f; // Convert meters to feet
         }
-        chevron_text[position].append(QString::number(val, 'f', 0) + " " + distance_unit);
+        chevron_text[position].append(QString::number(val, 'f', 1) + " " + distance_unit);
     }
 
     // Absolute velocity display (chevron_data == 2 or all)
@@ -285,7 +287,12 @@ void ModelRenderer::drawLeadStatusAtPosition(QPainter &painter,
 
     // Position text below chevron, centered horizontally
     float text_x = chevron_pos.x() - str_w / 2;
+    // -YJ-
     float text_y = chevron_pos.y() - sz - 15;
+    if (d_rel < 8.0f) {
+        // text_x = surface_rect.width()/2;
+        text_y = surface_rect.height()-40;
+    }
 
     // Clamp to screen bounds
     text_x = std::clamp(text_x, 10.0f, (float)width - str_w - 10);
