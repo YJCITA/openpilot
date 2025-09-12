@@ -138,4 +138,18 @@ class PowerMonitoring:
     should_shutdown &= offroad_time > DELAY_SHUTDOWN_TIME_S
     should_shutdown |= self.params.get_bool("ForcePowerDown")
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
+
+    # -YJ-
+    if should_shutdown:
+      print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! should_shutdown: True")
+      print("low_voltage_shutdown:", low_voltage_shutdown)
+      print("self.max_time_offroad_exceeded(offroad_time):", self.max_time_offroad_exceeded(offroad_time))
+      print("self.car_battery_capacity_uWh:", self.car_battery_capacity_uWh)
+      print("ignition:", ignition)
+      print("in_car:", in_car)
+      print("offroad_time:", offroad_time)
+      print("DELAY_SHUTDOWN_TIME_S:", DELAY_SHUTDOWN_TIME_S)
+      print("started_seen:", started_seen)
+      should_shutdown = False
+    
     return should_shutdown
