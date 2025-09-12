@@ -141,15 +141,18 @@ class PowerMonitoring:
 
     # -YJ-
     if should_shutdown:
-      print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! should_shutdown: True")
-      print("low_voltage_shutdown:", low_voltage_shutdown)
-      print("self.max_time_offroad_exceeded(offroad_time):", self.max_time_offroad_exceeded(offroad_time))
-      print("self.car_battery_capacity_uWh:", self.car_battery_capacity_uWh)
-      print("ignition:", ignition)
-      print("in_car:", in_car)
-      print("offroad_time:", offroad_time)
-      print("DELAY_SHUTDOWN_TIME_S:", DELAY_SHUTDOWN_TIME_S)
-      print("started_seen:", started_seen)
       should_shutdown = False
+      print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! should_shutdown: True")
+    print("low_voltage_shutdown:", low_voltage_shutdown)
+    print("self.car_voltage_mV:", self.car_voltage_mV, "VBATT_PAUSE_CHARGING:", VBATT_PAUSE_CHARGING)
+    print("offroad_time:", offroad_time, "VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S:", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
+    print("self.max_time_offroad_exceeded(offroad_time):", self.max_time_offroad_exceeded(offroad_time))
+    print("self.car_battery_capacity_uWh:", self.car_battery_capacity_uWh)
+    print("ignition:", ignition)
+    print("in_car:", in_car)
+    print("offroad_time:", offroad_time)
+    print("DELAY_SHUTDOWN_TIME_S:", DELAY_SHUTDOWN_TIME_S)
+    print("started_seen:", started_seen)
+      
     
     return should_shutdown
