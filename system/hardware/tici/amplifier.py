@@ -2,6 +2,7 @@
 import time
 from smbus2 import SMBus
 from collections import namedtuple
+from openpilot.system.hardware import C3L
 
 # https://datasheets.maximintegrated.com/en/ds/MAX98089.pdf
 
@@ -124,7 +125,10 @@ class Amplifier:
 
   def set_configs(self, configs: list[AmpConfig]) -> bool:
     # retry in case panda is using the amp
-    tries = 5
+    if C3L:
+      tries = 5
+    else:
+      tries = 15
     backoff = 0.
     for i in range(tries):
       try:

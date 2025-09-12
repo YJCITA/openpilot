@@ -18,7 +18,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
-from openpilot.system.hardware import HARDWARE, TICI, AGNOS
+from openpilot.system.hardware import HARDWARE, TICI, AGNOS, C3L
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
@@ -382,6 +382,11 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     # Offroad power monitoring
     voltage = None if peripheralState.pandaType == log.PandaState.PandaType.unknown else peripheralState.voltage
+
+    if C3L:
+      v_raw = voltage
+      if voltage is not None and v_raw > 0:
+        voltage = v_raw*(12/v_raw)
 
     # GitHub runner auto off: 9V is used as the threshold because most desktop runners
     # will rarely exceed 5V so 9V is set as our buffer between desk use and car use.
