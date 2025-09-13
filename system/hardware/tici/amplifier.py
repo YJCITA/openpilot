@@ -141,7 +141,6 @@ class Amplifier:
     return False
 
   def set_global_shutdown(self, amp_disabled: bool) -> bool:
-    print("set_global_shutdown!!")
     return self.set_configs([self._get_shutdown_config(amp_disabled), ])
 
   def initialize_configuration(self, model: str) -> bool:
@@ -151,7 +150,6 @@ class Amplifier:
       *CONFIGS[model],
       self._get_shutdown_config(False),
     ]
-    print("initialize_configuration!!")
     return self.set_configs(cfgs)
 
 
