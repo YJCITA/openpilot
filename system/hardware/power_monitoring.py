@@ -29,6 +29,8 @@ class PowerMonitoring:
     self.car_voltage_instant_mV = 12e3          # Last value of peripheralState voltage
     self.integration_lock = threading.Lock()
 
+    self.debug = False
+
     car_battery_capacity_uWh = self.params.get("CarBatteryCapacity") or 0
 
     # Reset capacity if it's low
@@ -46,6 +48,12 @@ class PowerMonitoring:
           self.next_pulsed_measurement_time = None
           self.power_used_uWh = 0
         return
+
+      # -YJ-
+      if abs(voltage - 12) < 0.2:
+        voltage *= 1e3
+      # if self.debug:
+      #   print("voltage: ", voltage)
 
       # Low-pass battery voltage
       self.car_voltage_instant_mV = voltage
@@ -76,6 +84,7 @@ class PowerMonitoring:
           self.last_measurement_time = now
       else:
         # Get current power draw somehow
+        # tici 135.985125  maybe wrong
         current_power = HARDWARE.get_current_power_draw()
 
         # Do the integration
@@ -131,7 +140,7 @@ class PowerMonitoring:
                             offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
     should_shutdown |= self.max_time_offroad_exceeded(offroad_time)
     should_shutdown |= low_voltage_shutdown
-    should_shutdown |= (self.car_battery_capacity_uWh <= 0)
+    # should_shutdown |= (self.car_battery_capacity_uWh <= 0)
     should_shutdown &= not ignition
     should_shutdown &= (not self.params.get_bool("DisablePowerDown"))
     should_shutdown &= in_car
@@ -140,19 +149,22 @@ class PowerMonitoring:
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
 
     # -YJ-
-    # if should_shutdown:
-    #   should_shutdown = False
-    #   print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! should_shutdown: True")
-    # print("self.max_time_offroad_exceeded(offroad_time):", self.max_time_offroad_exceeded(offroad_time))
-    # print("low_voltage_shutdown:", low_voltage_shutdown)
-    # print("self.car_voltage_mV:", self.car_voltage_mV, " < VBATT_PAUSE_CHARGING:", VBATT_PAUSE_CHARGING* 1e3)
-    # print("offroad_time:", offroad_time, " > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S:", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
-    # print(" not self.car_battery_capacity_uWh:", self.car_battery_capacity_uWh)
-    # print("ignition:", ignition)
-    # print("in_car:", in_car)
-    # print("offroad_time:", offroad_time)
-    # print("DELAY_SHUTDOWN_TIME_S:", DELAY_SHUTDOWN_TIME_S)
-    # print("started_seen:", started_seen)
+    if self.debug:
+      if should_shutdown:
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! should_shutdown: ", should_shutdown)
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! should_shutdown: ", should_shutdown)
+        should_shutdown = False
+
+        print("self.max_time_offroad_exceeded(offroad_time):", self.max_time_offroad_exceeded(offroad_time))
+        print("low_voltage_shutdown:", low_voltage_shutdown)
+        print("self.car_voltage_mV:", self.car_voltage_mV, " < VBATT_PAUSE_CHARGING:", VBATT_PAUSE_CHARGING* 1e3)
+        print("offroad_time:", offroad_time, " > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S:", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
+        print(" not self.car_battery_capacity_uWh:", self.car_battery_capacity_uWh)
+        print("ignition:", ignition)
+        print("in_car:", in_car)
+        print("offroad_time:", offroad_time)
+        print("DELAY_SHUTDOWN_TIME_S:", DELAY_SHUTDOWN_TIME_S)
+        print("started_seen:", started_seen)
       
     
     return should_shutdown
