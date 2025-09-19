@@ -65,13 +65,21 @@ def escape_ffmpeg_text(value: str):
 
 
 def get_logreader(route: Route):
-  return LogReader(route.qlog_paths()[0] if len(route.qlog_paths()) else route.name.canonical_name)
+  if len(route.qlog_paths()):
+    segment_name_list = route.qlog_paths()
+    for item in segment_name_list:
+      if item is not None:
+        segment_name = item
+  else:
+     segment_name = route.name.canonical_name
+  return LogReader(segment_name)
+  # return LogReader(route.qlog_paths()[0] if len(route.qlog_paths()) else route.name.canonical_name)
 
 
 def get_meta_text(lr: LogReader, route: Route):
   init_data = lr.first('initData')
   car_params = lr.first('carParams')
-  origin_parts = init_data.gitRemote.split('/')
+  origin_parts = init_data.gitRemote.split('|')
   origin = origin_parts[3] if len(origin_parts) > 3 else 'unknown'
   return ', '.join([
     f"openpilot v{init_data.version}",
@@ -92,8 +100,11 @@ def parse_args(parser: ArgumentParser):
       args.start = DEMO_START
       args.end = DEMO_END
   elif args.route.count('/') == 1:
+    # -YJ- 其中/换为|
+    args.route = args.route.replace('/', '|')
     if args.start is None or args.end is None:
       parser.error('must provide both start and end if timing is not in the route ID')
+      
   elif args.route.count('/') == 3:
     if args.start is not None or args.end is not None:
       parser.error('don\'t provide timing when including it in the route ID')
@@ -106,10 +117,12 @@ def parse_args(parser: ArgumentParser):
   if args.start < SECONDS_TO_WARM:
     parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
-  try:
-    args.route = Route(args.route, data_dir=args.data_dir)
-  except Exception as e:
-    parser.error(f'failed to get route: {e}')
+  args.route = Route(args.route, data_dir=args.data_dir)
+
+  # try:
+  #   args.route = Route(args.route, data_dir=args.data_dir)
+  # except Exception as e:
+  #   parser.error(f'failed to get route: {e}')
 
   # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
   length = round(args.route.max_seg_number * 60)
@@ -130,7 +143,12 @@ def populate_car_params(lr: LogReader):
   for cp in entries:
     key, value = cp.key, cp.value
     try:
-      params.put(key, params.cpp2python(key, value))
+      converted_value = params.cpp2python(key, value)
+      # Skip None values for JSON type parameters to avoid type mismatch errors
+      if converted_value is not None:
+        params.put(key, converted_value)
+      else:
+        logger.debug(f"skipping None value for param '{key}'")
     except UnknownKeyName:
       # forks of openpilot may have other Params keys configured. ignore these
       logger.warning(f"unknown Params key '{key}', skipping")
@@ -155,7 +173,13 @@ def validate_env(parser: ArgumentParser):
 def validate_output_file(output_file: str):
   if not output_file.endswith('.mp4'):
     raise ArgumentTypeError('output must be an mp4')
-  return output_file
+  # Expand ~ to user home directory
+  expanded_path = os.path.expanduser(output_file)
+  # Create output directory if it doesn't exist
+  output_dir = os.path.dirname(expanded_path)
+  if output_dir and not os.path.exists(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+  return expanded_path
 
 
 def validate_route(route: str):
