@@ -215,6 +215,7 @@ def clip(
   speed: int,
   target_mb: int,
   title: str | None,
+  quality_preset: str = 'balanced',
 ):
   logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
   lr = get_logreader(route)
@@ -228,17 +229,44 @@ def clip(
 
   box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
   meta_text = get_meta_text(lr, route)
+  print(f"quality_preset: {quality_preset}")
+  # 根据质量预设调整参数
+  if quality_preset == 'low':
+    crf_value = '23'
+    preset_value = 'ultrafast'
+    tune_value = 'zerolatency'
+    base_filters = []  # 不使用滤镜以加快速度
+  elif quality_preset == 'high':
+    crf_value = '15'  # 更高质量
+    preset_value = 'slow'
+    tune_value = 'film'
+    base_filters = [
+      "hqdn3d=4:3:6:4.5",  # 去噪滤镜
+      "unsharp=5:5:0.8:3:3:0.4",  # 锐化滤镜
+    ]
+  else:  # balanced
+    crf_value = '18'
+    preset_value = 'medium'
+    tune_value = 'film'
+    base_filters = [
+      "hqdn3d=4:3:6:4.5",  # 去噪滤镜
+      "unsharp=5:5:0.8:3:3:0.4",  # 锐化滤镜
+    ]
+  
   overlays = [
     # metadata overlay
     f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
     # route time overlay
     f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
   ]
+  
+  # 合并所有滤镜
+  all_filters = base_filters + overlays
   if title:
     overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
 
   if speed > 1:
-    overlays += [
+    all_filters += [
       f"setpts=PTS/{speed}",
       "fps=60",
     ]
@@ -248,16 +276,18 @@ def clip(
     '-video_size', RESOLUTION,
     '-framerate', str(FRAMERATE),
     '-f', 'x11grab',
-    '-rtbufsize', '100M',
+    '-rtbufsize', '200M',  # 增加缓冲区
     '-draw_mouse', '0',
     '-i', display,
     '-c:v', 'libx264',
     '-maxrate', f'{bit_rate_kbps}k',
     '-bufsize', f'{bit_rate_kbps*2}k',
-    '-crf', '23',
-    '-filter:v', ','.join(overlays),
-    '-preset', 'ultrafast',
-    '-tune', 'zerolatency',
+    '-crf', crf_value,  # 动态CRF值
+    '-filter:v', ','.join(all_filters) if all_filters else 'null',
+    '-preset', preset_value,  # 动态预设
+    '-tune', tune_value,  # 动态调优
+    '-profile:v', 'high',  # 使用high profile
+    '-level', '4.1',  # 设置level
     '-pix_fmt', 'yuv420p',
     '-movflags', '+faststart',
     '-f', 'mp4',
@@ -317,13 +347,23 @@ def main():
   p.add_argument('-d', '--data-dir', help='local directory where route data is stored')
   p.add_argument('-e', '--end', help='stop clipping at <end> seconds', type=int)
   p.add_argument('-f', '--file-size', help='target file size (Discord/GitHub support max 10MB, default is 9MB)', type=float, default=9.)
-  p.add_argument('-o', '--output', help='output clip to (.mp4)', type=validate_output_file, default=DEFAULT_OUTPUT)
+  # p.add_argument('-o', '--output', help='output clip to (.mp4)', type=validate_output_file, default=DEFAULT_OUTPUT)
+  p.add_argument('-o', '--output', help='output clip to (.mp4)', type=str, default=None)
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-q', '--quality', help='quality of camera (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-x', '--speed', help='record the clip at this speed multiple', type=int, default=1)
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
   p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
+  p.add_argument('--quality-preset', help='video quality preset (fast, balanced, high)', choices=['fast', 'balanced', 'high'], default='balanced')
   args = parse_args(p)
+
+  # 
+  if args.output is None:
+    # 取本地时间命名
+    time_str = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+    # name = args.route.split("/")[-1]
+    # args.output = f'{args.output}_{name}_{args.start}_{args.end}.mp4'
+    args.output = os.path.join(args.data_dir, f'{time_str}.mp4')
   exit_code = 1
   try:
     clip(
@@ -337,6 +377,7 @@ def main():
       speed=args.speed,
       target_mb=args.file_size,
       title=args.title,
+      quality_preset=args.quality_preset,
     )
     exit_code = 0
   except KeyboardInterrupt as e:
