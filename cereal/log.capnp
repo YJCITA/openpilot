@@ -1251,6 +1251,8 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   shouldStop @37: Bool;
   allowThrottle @38: Bool;
   allowBrake @39: Bool;
+  
+  longitudinalPlanSP @40 :Custom.LongitudinalPlanSP;
 
 
   solverExecutionTime @35 :Float32;

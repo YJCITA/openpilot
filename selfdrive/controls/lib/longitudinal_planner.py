@@ -15,6 +15,8 @@ from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
+from openpilot.system.hardware import PC
+
 from openpilot.sunnypilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlannerSP
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
@@ -66,6 +68,7 @@ class LongitudinalPlanner(LongitudinalPlannerSP):
     self.prev_accel_clip = [ACCEL_MIN, ACCEL_MAX]
     self.output_a_target = 0.0
     self.output_should_stop = False
+    self.output_a_target_raw = 0.0 # no limit
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -182,17 +185,24 @@ class LongitudinalPlanner(LongitudinalPlannerSP):
 
     for idx in range(2):
       accel_clip[idx] = np.clip(accel_clip[idx], self.prev_accel_clip[idx] - 0.05, self.prev_accel_clip[idx] + 0.05)
+    self.output_a_target_raw = output_a_target
+    # 0.05 m/s²：这是一个相对较小的变化率限制
+    # 相当于每控制周期最多变化 0.05 m/s² 的加速度
+    # 在20Hz控制频率下，相当于最大加速度变化率为 1.0 m/s³
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
     self.prev_accel_clip = accel_clip
 
   def publish(self, sm, pm):
-    plan_send = messaging.new_message('longitudinalPlan')
+    if not PC:
+      plan_send = messaging.new_message('longitudinalPlan')
+    else:
+      plan_send = messaging.new_message_pc('longitudinalPlan', logMonoTime=sm.logMonoTime['modelV2'])
 
     plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'selfdriveState', 'radarState'])
 
     longitudinalPlan = plan_send.longitudinalPlan
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']
-    longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
+    longitudinalPlan.processingDelay = (plan_send.logMonoTime  - sm.logMonoTime['modelV2']/ 1e9)
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
 
     longitudinalPlan.speeds = self.v_desired_trajectory.tolist()
@@ -208,6 +218,16 @@ class LongitudinalPlanner(LongitudinalPlannerSP):
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = bool(self.allow_throttle)
 
+    # -YJ-
+    mpcDebug = longitudinalPlan.longitudinalPlanSP.mpc
+    mpcDebug.stopDis = float(self.mpc.STOP_DISTANCE)
+    mpcDebug.accSafeObjDis = float(self.mpc.acc_safe_obstacle_distance[0])
+    mpcDebug.lead0Dis = float(self.mpc.lead_0_obstacle[0])
+    mpcDebug.lead1Dis = float(self.mpc.lead_1_obstacle[0])
+    mpcDebug.tFellow = float(self.mpc.t_follow)
+    mpcDebug.aTargetRaw = float(self.output_a_target_raw)
+    mpcDebug.vDesiredFilter = float(self.v_desired_filter.x)
+
     pm.send('longitudinalPlan', plan_send)
 
-    self.publish_longitudinal_plan_sp(sm, pm, self.mpc)
+    self.publish_longitudinal_plan_sp(sm, pm)

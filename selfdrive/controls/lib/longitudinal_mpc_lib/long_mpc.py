@@ -35,17 +35,19 @@ CONSTR_DIM = 4
 # X_EGO_COST = 0.0（车辆位置成本）
 # V_EGO_COST = 0.0（车辆速度成本）
 # A_EGO_COST = 0.0（车辆加速度成本）
-# J_EGO_COST = 5.0（车辆加速度变化率成本）
-# A_CHANGE_COST = 200.0（加速度变化率成本）
+# J_EGO_COST = 5.0（车辆加速度变化率成本） jerk
+# A_CHANGE_COST = 200.0（加速度变化率成本） a_ego - prev_a
 # CRASH_DISTANCE = 0.25（碰撞距离）
 # X_EGO_OBSTACLE_COST = 3.
 # -YJ-
+dt_run_period = 0.05 # 运行周期
 X_EGO_OBSTACLE_COST = 5.
 X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
-J_EGO_COST = 5.0
-A_CHANGE_COST = 200.
+# A_CHANGE_COST = 200.
+A_CHANGE_COST = 4.0*(1/dt_run_period)
+J_EGO_COST = 3.5
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .25
 # LEAD_DANGER_FACTOR = 0.75
@@ -73,7 +75,7 @@ def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
     return 1.0
   elif personality==log.LongitudinalPersonality.standard:
-    return 1.0
+    return 0.75
   elif personality==log.LongitudinalPersonality.aggressive:
     return 0.5
   else:
@@ -295,8 +297,15 @@ class LongitudinalMpc:
   def set_weights(self, prev_accel_constraint=True, personality=log.LongitudinalPersonality.standard):
     jerk_factor = get_jerk_factor(personality)
     if self.mode == 'acc':
-      a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
-      cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, jerk_factor * a_change_cost, jerk_factor * J_EGO_COST]
+      a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0  # 200.0 或 0
+      cost_weights = [
+          X_EGO_OBSTACLE_COST,           # 5.0  - 距离跟随
+          X_EGO_COST,                    # 0.0  - 位置
+          V_EGO_COST,                    # 0.0  - 速度  
+          A_EGO_COST,                    # 0.0  - 加速度
+          jerk_factor * a_change_cost,   # jerk_factor * 200.0  Jerk成本
+          jerk_factor * J_EGO_COST       # jerk_factor * 5.0 加速度变化成本
+      ]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
     elif self.mode == 'blended':
       a_change_cost = 40.0 if prev_accel_constraint else 0

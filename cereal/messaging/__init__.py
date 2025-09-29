@@ -30,9 +30,13 @@ def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event
 def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
   args = {
     'valid': False,
-    'logMonoTime': int(time.monotonic() * 1e9),
+    # 'logMonoTime': int(time.monotonic() * 1e9),
     **kwargs
   }
+  # kwargs带了logMonoTime，则使用kwargs的logMonoTime
+  if 'logMonoTime' not in kwargs:
+    args['logMonoTime'] = int(time.monotonic() * 1e9)
+    
   dat = log.Event.new_message(**args)
   if service is not None:
     if size is None:

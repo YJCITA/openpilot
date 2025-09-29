@@ -141,6 +141,8 @@ struct LongitudinalPlanSP @0xf35cc4560bbf6ec2 {
     lead1Dis @2 :Float32;
     accSafeObjDis @3 :Float32;
     tFellow @4 :Float32;
+    aTargetRaw @5 :Float32;
+    vDesiredFilter @6 :Float32;
     
   }
 }
