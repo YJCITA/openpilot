@@ -49,12 +49,6 @@ class PowerMonitoring:
           self.power_used_uWh = 0
         return
 
-      # -YJ-
-      if abs(voltage - 12) < 0.2:
-        voltage *= 1e3
-      # if self.debug:
-      #   print("voltage: ", voltage)
-
       # Low-pass battery voltage
       self.car_voltage_instant_mV = voltage
       self.car_voltage_mV = ((voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 - CAR_VOLTAGE_LOW_PASS_K)))
@@ -139,7 +133,7 @@ class PowerMonitoring:
     low_voltage_shutdown = (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3) and
                             offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
     should_shutdown |= self.max_time_offroad_exceeded(offroad_time)
-    should_shutdown |= low_voltage_shutdown
+    # should_shutdown |= low_voltage_shutdown
     # should_shutdown |= (self.car_battery_capacity_uWh <= 0)
     should_shutdown &= not ignition
     should_shutdown &= (not self.params.get_bool("DisablePowerDown"))

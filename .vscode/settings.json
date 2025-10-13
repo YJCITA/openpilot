@@ -1,0 +1,44 @@
+{
+  "search.exclude": {
+    "cereal/gen/*": true,
+    "**/openpilot": true,
+  },
+  "python.analysis.exclude": [
+    "cereal/gen/*",
+    "**/openpilot",
+  ],
+  "files.exclude": {
+    "cereal/gen": true,
+    "**/*.o" :true,
+    "**/*.a" :true,
+    "**/*.so" :true,
+    "**/openpilot": true,
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "[python]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[javascript]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[typescript]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[cpp]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[c]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  }
+}

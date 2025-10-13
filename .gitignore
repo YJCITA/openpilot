@@ -106,8 +106,8 @@ Pipfile
 .history
 .ionide
 
-.vscode/
 tools/plotjuggler_yj/
+code_auto/
 
 ### JetBrains ###
 !.idea/customTargets.xml
