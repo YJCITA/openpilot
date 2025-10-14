@@ -3,6 +3,7 @@ import threading
 
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
+from selfdrive.selfdrived.selfdrived import C3L
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.statsd import statlog
 

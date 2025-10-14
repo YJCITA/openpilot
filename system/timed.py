@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import datetime
+import os
 import subprocess
 import time
 import math
@@ -161,7 +162,9 @@ def set_timezone_from_gps(latitude, longitude, last_timezone=None, date=None):
 
 
 def set_time(new_time, latitude=None, longitude=None, last_timezone=None):
+    # -YJ- Always convert UTC time to Beijing Time (UTC+8)
     # If GPS coordinates are available, set timezone first
+    print("latitude: ", latitude, "longitude: ", longitude)
     if latitude is not None and longitude is not None:
         last_timezone = set_timezone_from_gps(latitude, longitude, last_timezone, new_time)
         
@@ -170,6 +173,11 @@ def set_time(new_time, latitude=None, longitude=None, last_timezone=None):
         local_time = new_time + datetime.timedelta(hours=offset)
         cloudlog.debug(f"Converting GPS UTC time {new_time} to local time {local_time} (offset: {offset}h)")
         new_time = local_time
+    else:
+        # -YJ- No GPS coordinates, use default Beijing Time (UTC+8)
+        print("!!!!!!!!!!!!!!!!!!!! No GPS coordinates, converting UTC time {new_time} to Beijing Time (UTC+8)")
+        cloudlog.info(f"No GPS coordinates, converting UTC time {new_time} to Beijing Time (UTC+8)")
+        new_time = new_time + datetime.timedelta(hours=8)
     
     diff = datetime.datetime.now() - new_time
     if abs(diff) < datetime.timedelta(seconds=10):
@@ -202,8 +210,28 @@ def main() -> NoReturn:
   pm = messaging.PubMaster(['clocks'])
   sm = messaging.SubMaster([gps_location_service])
   
+  # -YJ- Initialize system time to Beijing Time at startup
+  # If no GPS, assume current system time is UTC and convert to Beijing Time
+  try:
+    current_time = datetime.datetime.now()
+    beijing_time = current_time + datetime.timedelta(hours=8)
+    time_str = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
+    
+    print(f"!!!!!!!!!!!!!!!!!!!! Initializing system time to Beijing Time")
+    print(f"pre system time (UTC): {current_time}")
+    # print(f"Setting to Beijing Time: {beijing_time}")
+    
+    subprocess.run(f"date -s '{time_str}'", shell=True, check=True)
+
+    current_time = datetime.datetime.now()  # 现在读取到 12:00:00
+    print(f"Current system time (Beijing Time): {current_time}")
+    cloudlog.info(f"Initialized system time to Beijing Time: {beijing_time}")
+    last_timezone = "UTC+08:00"
+  except subprocess.CalledProcessError as e:
+    cloudlog.exception(f"Failed to initialize system time: {e}")
+    last_timezone = None
+  
   # Cache last set timezone to avoid frequent settings
-  last_timezone = None
   last_position = None
   
   while True:

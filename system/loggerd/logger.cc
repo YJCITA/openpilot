@@ -96,9 +96,13 @@ kj::Array<capnp::word> logger_build_init_data() {
 // -YJ-
 std::string logger_get_route_name() {
   char route_name[64] = {'\0'};
+  
+  // Get UTC time and convert to Beijing Time (UTC+8)
   time_t rawtime = time(NULL);
+  rawtime += 8 * 3600;  // Add 8 hours for Beijing Time
+  
   struct tm timeinfo;
-  localtime_r(&rawtime, &timeinfo);
+  gmtime_r(&rawtime, &timeinfo);  // Use gmtime_r since we already added offset
   strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
   return route_name;
 }
