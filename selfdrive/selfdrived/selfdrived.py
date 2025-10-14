@@ -84,10 +84,7 @@ class SelfdriveD(CruiseHelper):
     self.gps_packets = [self.gps_location_service]
     self.sensor_packets = ["accelerometer", "gyroscope"]
     if not C3L:
-      if not C3L:
       self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
-    else:
-      self.camera_packets = ["roadCameraState", "wideRoadCameraState"]
     else:
       self.camera_packets = ["roadCameraState", "wideRoadCameraState"]
 
@@ -334,7 +331,6 @@ class SelfdriveD(CruiseHelper):
       self.not_running_prev = not_running
     if self.sm.recv_frame['managerState'] and (not_running - self.ignored_processes):
       if not C3L:
-
         self.events.add(EventName.processNotRunning)
     else:
       if not SIMULATION and not self.rk.lagging:

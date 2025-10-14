@@ -22,24 +22,6 @@ from openpilot.system.hardware.hw import Paths
 
 
 def manager_init() -> None:
-  # -YJ- Initialize system time to Beijing Time at startup (before any process starts)
-  # This ensures loggerd creates folders with Beijing Time
-  try:
-    import datetime
-    import subprocess
-    current_time = datetime.datetime.now()
-    beijing_time = current_time + datetime.timedelta(hours=8)
-    time_str = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
-    
-    print(f"!!!!!!!!!!!!!!!!!!!! Manager: Initializing system time to Beijing Time")
-    print(f"Current system time: {current_time}")
-    print(f"Setting to Beijing Time: {beijing_time}")
-    
-    subprocess.run(f"date -s '{time_str}'", shell=True, check=True)
-    print(f"Manager: System time set to Beijing Time successfully")
-  except Exception as e:
-    print(f"Manager: Failed to set system time: {e}")
-  
   save_bootlog()
 
   build_metadata = get_build_metadata()
