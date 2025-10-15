@@ -204,10 +204,10 @@
   
             "args": [
   
-                  "/home/yj/bak/data/comma_data/tesla/20250912_c3l/2aef53e13714ee01|2025-09-13--08-38-18--0",
+                  "/home/yj/bak/data/comma_data/tesla/20251013_sp_master_c3l_居中不正常/2025-10-13--13-18-29--1",
   
-                  "--segment_count", "2",
-                  "--dbc", "/home/yj/op/sunnypilot_tesla/opendbc/dbc/tesla_model3_party_yj.dbc",
+                  "--segment_count", "1",
+                  "--dbc", "/home/yj/op/sunnypilot_tesla/opendbc/dbc/tesla_model3_party.dbc",
                   "--layout", "/home/yj/op/sunnypilot_tesla/tools/plotjuggler_yj/layout/dev/acc.xml",
                   "--can"
                   // "--layout", "/home/yj/op/frogpilot_byd/tools/plotjuggler_yj/layouts/dev/lcc_pid.xml",
@@ -447,6 +447,45 @@
                 // "/home/yj/bak/data/comma_data/EP32/20240330_EP32_095_ok/2aef53e13714ee01|2024-03-30--11-03-23--0"
                 // "/home/yj/bak/data/comma_data/A1J_LX/PC/2aef53e13714ee01|2023-02-06--17-09-03--0"
             ]
+        },
+        {
+          "name": "clip_video_complete_example",
+          "type": "python",
+          "request": "launch",
+          "cwd": "${workspaceFolder}",
+          "program": "./tools/clip/run_yj.py",
+          "console": "integratedTerminal",
+          "justMyCode": true,
+          "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+          "args": [
+            // 必选：路线名称（dongle_id|timestamp 或 dongle_id/timestamp）
+            "2aef53e13714ee01/2025-10-13--13-18-29",
+  
+            // 数据目录：本地路线数据存储位置
+            "-d", "/home/yj/bak/data/comma_data/tesla/20251013_sp_master_c3l_居中不正常/",
+  
+            // 时间范围：开始和结束时间（秒）  不传就是从开始到结束
+            // "-s", "2",      // 开始时间
+            // "-e", "700",     // 结束时间
+  
+            // 视频质量：low=qcam, high=hevc（默认high）
+            "-q", "balanced",
+  
+            // // 质量预设：fast/balanced/high（影响编码速度和质量）
+            // "--quality-preset", "balanced",
+  
+  
+            // 播放速度：倍数（默认1，可设置2、3等加速）
+            // "-x", "2",
+  
+            // 视频标题：叠加在视频上（可选）
+            // "-t", "Tesla Model 3 - Lane Centering Test",
+  
+            // 前缀：临时文件前缀（可选）
+            // "-p", "my_clip_001",
+          ]
         }
     ]
   }
