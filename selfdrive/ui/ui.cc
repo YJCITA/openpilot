@@ -215,6 +215,8 @@ void Device::updateBrightness(const UIState &s) {
 
 void Device::updateWakefulness(const UIState &s) {
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
+  // -YJ-
+  bool offroad_mode = false;
   ignition_on = s.scene.ignition;
 
   if (ignition_just_turned_off) {
@@ -222,8 +224,16 @@ void Device::updateWakefulness(const UIState &s) {
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimeout();
   }
-
-  setAwake(s.scene.ignition || interactive_timeout > 0);
+  // -YJ-
+  // if offroad_mode=true, only wake up when interactive_timeout > 0;
+  auto params = Params();
+  offroad_mode = params.getBool("OffroadMode");
+  if (offroad_mode) {
+    setAwake(interactive_timeout > 0);
+  } else {
+    setAwake(s.scene.ignition || interactive_timeout > 0);
+  }
+  // setAwake(s.scene.ignition || interactive_timeout > 0);
 }
 
 #ifndef SUNNYPILOT
