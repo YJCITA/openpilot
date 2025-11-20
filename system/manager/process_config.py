@@ -146,6 +146,9 @@ procs = [
   PythonProcess("statsd", "system.statsd", always_run),
   PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", only_onroad),
 
+  # -YJ-
+  PythonProcess("beep", "selfdrive.selfdrived.beep", always_run, enabled=C3L),
+
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
