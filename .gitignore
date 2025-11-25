@@ -110,3 +110,5 @@ Pipfile
 !.idea/customTargets.xml
 !.idea/tools/*
 !.run/*
+
+code_auto

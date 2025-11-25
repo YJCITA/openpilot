@@ -3,6 +3,7 @@ import threading
 
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
+from selfdrive.selfdrived.selfdrived import C3L
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.statsd import statlog
 
@@ -129,8 +130,9 @@ class PowerMonitoring:
     low_voltage_shutdown = (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3) and
                             offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
     should_shutdown |= self.max_time_offroad_exceeded(offroad_time)
-    should_shutdown |= low_voltage_shutdown
-    should_shutdown |= (self.car_battery_capacity_uWh <= 0)
+    if not C3L:
+      should_shutdown |= low_voltage_shutdown
+      should_shutdown |= (self.car_battery_capacity_uWh <= 0)
     should_shutdown &= not ignition
     should_shutdown &= (not self.params.get_bool("DisablePowerDown"))
     should_shutdown &= in_car

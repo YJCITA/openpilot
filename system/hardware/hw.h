@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdio>
+#include <cstring>
 #include <string>
 
 #include "system/hardware/base.h"
@@ -22,11 +24,34 @@ namespace Path {
     return util::getenv("HOME") + "/.comma" + Path::openpilot_prefix();
   }
 
+  inline bool external_storage_available() {
+    static constexpr char mount_point[] = "/mnt/external_realdata";
+    bool mounted = false;
+    if (FILE *fp = fopen("/proc/mounts", "re")) {
+      char line[512] = {0};
+      while (fgets(line, sizeof(line), fp) != nullptr) {
+        char parsed_path[256] = {0};
+        if (sscanf(line, "%*s %255s %*s %*s %*d %*d", parsed_path) == 1 && strcmp(parsed_path, mount_point) == 0) {
+          mounted = true;
+          break;
+        }
+      }
+      fclose(fp);
+    }
+    return mounted && access(mount_point, W_OK) == 0;
+  }
+
+  inline std::string external_realdata() {
+    static const std::string external_path = "/mnt/external_realdata";
+    return external_storage_available() ? external_path : "/data/media/0/realdata";
+  }
+
+
   inline std::string log_root() {
     if (const char *env = getenv("LOG_ROOT")) {
       return env;
     }
-    return Hardware::PC() ? Path::comma_home() + "/media/0/realdata" : "/data/media/0/realdata";
+    return Hardware::PC() ? Path::comma_home() + "/media/0/realdata" : Path::external_realdata();
   }
 
   inline std::string params() {

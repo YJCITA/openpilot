@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+import os
 from smbus2 import SMBus
 from collections import namedtuple
 
@@ -124,7 +125,10 @@ class Amplifier:
 
   def set_configs(self, configs: list[AmpConfig]) -> bool:
     # retry in case panda is using the amp
-    tries = 15
+    if os.path.isfile("/data/C3L"):
+      tries = 1
+    else:
+      tries = 15
     backoff = 0.
     for i in range(tries):
       try:
@@ -148,11 +152,3 @@ class Amplifier:
     ]
     return self.set_configs(cfgs)
 
-
-if __name__ == "__main__":
-  with open("/sys/firmware/devicetree/base/model") as f:
-    model = f.read().strip('\x00')
-  model = model.split('comma ')[-1]
-
-  amp = Amplifier()
-  amp.initialize_configuration(model)

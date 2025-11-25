@@ -71,7 +71,7 @@ if GetOption('extras'):
   qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
 
   # build installers
-  if arch != "Darwin":
+  if arch != "Darwin" and not GetOption('no_installer'):
     raylib_env = env.Clone()
     raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
     raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
@@ -103,3 +103,5 @@ if GetOption('extras'):
       f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
       # keep installers small
       assert f[0].get_size() < 1900*1e3, f[0].get_size()
+elif GetOption('no_installer'):
+  print("Skipping installer compilation due to --no-installer option")
