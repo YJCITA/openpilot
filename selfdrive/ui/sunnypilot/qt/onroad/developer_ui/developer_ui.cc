@@ -13,7 +13,7 @@
 // Add Relative Distance to Primary Lead Car
 // Unit: Meters
 UiElement DeveloperUi::getDRel(bool lead_status, float lead_d_rel) {
-  QString value = lead_status ? QString::number(lead_d_rel, 'f', 0) : "-";
+  QString value = lead_status ? QString::number(lead_d_rel, 'f', 1) : "-";
   QColor color = QColor(255, 255, 255, 200);
 
   if (lead_status) {
