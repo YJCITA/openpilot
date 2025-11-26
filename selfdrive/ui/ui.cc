@@ -169,7 +169,7 @@ void Device::setAwake(bool on) {
 void Device::resetInteractiveTimeout(int timeout) {
   int customTimeout = QString::fromStdString(Params().get("InteractivityTimeout")).toInt();
   if (timeout == -1) {
-    timeout = customTimeout == 0 ? (ignition_on ? 120 : 360) : customTimeout;
+    timeout = customTimeout == 0 ? (ignition_on ? 10 : 30) : customTimeout;
   }
   interactive_timeout = timeout * UI_FREQ;
 }
@@ -189,7 +189,7 @@ void Device::updateBrightness(const UIState &s) {
     }
 
     if (brightness_override == 1) {
-      clipped_brightness = std::clamp(100.0f * clipped_brightness, 5.0f, 30.0f);  // Scale back to 5% to 30%
+      clipped_brightness = std::clamp(100.0f * clipped_brightness, 1.0f, 100.0f);  // Scale back to 1% to 100%
     } else if (brightness_override == 0) {
       clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, 100.0f);  // Scale back to 10% to 100%
     }
@@ -222,6 +222,8 @@ void Device::updateBrightness(const UIState &s) {
 
 void Device::updateWakefulness(const UIState &s) {
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
+  // -YJ-
+  bool offroad_mode = false;
   ignition_on = s.scene.ignition;
 
   if (ignition_just_turned_off) {
@@ -229,8 +231,16 @@ void Device::updateWakefulness(const UIState &s) {
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimeout();
   }
-
-  setAwake(s.scene.ignition || interactive_timeout > 0);
+  // -YJ-
+  // if offroad_mode=true, only wake up when interactive_timeout > 0;
+  auto params = Params();
+  offroad_mode = params.getBool("OffroadMode");
+  if (offroad_mode) {
+    setAwake(interactive_timeout > 0);
+  } else {
+    setAwake(s.scene.ignition || interactive_timeout > 0);
+  }
+  // setAwake(s.scene.ignition || interactive_timeout > 0);
 }
 
 #ifndef SUNNYPILOT

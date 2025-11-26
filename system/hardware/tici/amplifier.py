@@ -125,10 +125,7 @@ class Amplifier:
 
   def set_configs(self, configs: list[AmpConfig]) -> bool:
     # retry in case panda is using the amp
-    if os.path.isfile("/data/C3L"):
-      tries = 1
-    else:
-      tries = 15
+    tries = 2
     backoff = 0.
     for i in range(tries):
       try:

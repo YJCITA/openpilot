@@ -35,7 +35,7 @@ REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 # -YJ-
-from openpilot.system.hardware import C3L
+from openpilot.system.hardware import C3XL
 
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
 
@@ -86,7 +86,7 @@ class SelfdriveD(CruiseHelper):
     self.gps_location_service = get_gps_location_service(self.params)
     self.gps_packets = [self.gps_location_service]
     self.sensor_packets = ["accelerometer", "gyroscope"]
-    if not C3L:
+    if not C3XL:
       self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
     else:
       self.camera_packets = ["roadCameraState", "wideRoadCameraState"]
