@@ -18,6 +18,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
+from openpilot.system.hardware import HARDWARE, TICI, AGNOS, C3
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
@@ -332,10 +333,10 @@ def hardware_thread(end_event, hw_queue) -> None:
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
     # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
-    if False:
+    if C3:
       if not os.path.isfile("/persist/comma/living-in-the-moment"):
         if not Path("/data/media").is_mount():
-          set_offroad_alert_if_changed("Offroad_StorageMissing", False)
+          set_offroad_alert_if_changed("Offroad_StorageMissing", True)
 
     # Handle offroad/onroad transition
     should_start = all(onroad_conditions.values())
@@ -376,8 +377,15 @@ def hardware_thread(end_event, hw_queue) -> None:
         startup_blocked_ts = time.monotonic()
 
       started_ts = None
-      if off_ts is None:
-        off_ts = time.monotonic()
+      # -YJ-
+      # if off_ts is None:
+      #   off_ts = time.monotonic()
+      # 只有在点火关闭时才设置 off_ts
+      if not onroad_conditions["ignition"]:
+          if off_ts is None:
+              off_ts = time.monotonic()
+      else:
+          off_ts = None  # 点火开启时不计时
 
     # Offroad power monitoring
     voltage = None if peripheralState.pandaType == log.PandaState.PandaType.unknown else peripheralState.voltage
