@@ -207,6 +207,7 @@ struct LongitudinalPlanSP @0xf35cc4560bbf6ec2 {
   struct SmartCruiseControl {
     vision @0 :Vision;
     map @1 :Map;
+    visionYJ @2 :Vision;
 
     struct Vision {
       state @0 :VisionState;
@@ -216,6 +217,9 @@ struct LongitudinalPlanSP @0xf35cc4560bbf6ec2 {
       maxPredictedLateralAccel @4 :Float32;
       enabled @5 :Bool;
       active @6 :Bool;
+      vTargetRaw @7 :Float32;
+      maxCurve @8 :Float32;
+      speed @9 :Float32;
     }
 
     struct Map {

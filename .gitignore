@@ -112,3 +112,5 @@ Pipfile
 !.run/*
 
 code_auto
+tools/plotjuggler_yj/
+.vscode

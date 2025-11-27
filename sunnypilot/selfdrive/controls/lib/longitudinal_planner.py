@@ -104,12 +104,26 @@ class LongitudinalPlannerSP:
     # Vision Control
     sccVision = smartCruiseControl.vision
     sccVision.state = self.scc.vision.state
+    sccVision.vTargetRaw = float(self.scc.vision.v_target)
     sccVision.vTarget = float(self.scc.vision.output_v_target)
     sccVision.aTarget = float(self.scc.vision.output_a_target)
     sccVision.currentLateralAccel = float(self.scc.vision.current_lat_acc)
     sccVision.maxPredictedLateralAccel = float(self.scc.vision.max_pred_lat_acc)
     sccVision.enabled = self.scc.vision.is_enabled
     sccVision.active = self.scc.vision.is_active
+
+    # -YJ-  new algorithm
+    sccVisionYJ = smartCruiseControl.visionYJ
+    sccVisionYJ.state = self.scc.vision.state
+    sccVisionYJ.vTargetRaw = float(self.scc.vision.v_target_curvature_based_raw)
+    sccVisionYJ.vTarget = float(self.scc.vision.output_v_target_curvature_based)
+    sccVisionYJ.aTarget = float(self.scc.vision.output_a_target_curvature_based)
+    sccVisionYJ.maxCurve = float(self.scc.vision.max_curvature_ahead)
+    sccVisionYJ.enabled = self.scc.vision.is_enabled
+    sccVisionYJ.active = self.scc.vision.is_active
+    sccVisionYJ.speed = float(self.scc.vision.v_ego)
+
+
     # Map Control
     sccMap = smartCruiseControl.map
     sccMap.state = self.scc.map.state
