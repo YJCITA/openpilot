@@ -67,6 +67,8 @@ void HudRendererSP::updateState(const UIState &s) {
     smartCruiseControlVisionActive = lp_sp.getSmartCruiseControl().getVision().getActive();
     smartCruiseControlMapEnabled = lp_sp.getSmartCruiseControl().getMap().getEnabled();
     smartCruiseControlMapActive = lp_sp.getSmartCruiseControl().getMap().getActive();
+    smartCruiseControlVisionVtargetraw = lp_sp.getSmartCruiseControl().getVision().getVTargetRaw();
+    smartCruiseControlVisionYJVtargetraw = lp_sp.getSmartCruiseControl().getVisionYJ().getVTargetRaw();
   }
   greenLightAlert = lp_sp.getE2eAlerts().getGreenLightAlert();
   leadDepartAlert = lp_sp.getE2eAlerts().getLeadDepartAlert();
@@ -128,6 +130,17 @@ void HudRendererSP::updateState(const UIState &s) {
     }
   }
 
+  // -YJ-
+  cpuUsagePercent = 0.0f;
+  const auto& cpuUsages = deviceState.getCpuUsagePercent();
+  if (cpuUsages.size() > 0) {
+    float sum = 0.0f;
+    for (const int& usage : cpuUsages) {
+      sum += usage;
+    }
+    cpuUsagePercent = sum / cpuUsages.size();
+  }
+
   latActive = car_control.getLatActive();
   actuators = car_control.getActuators();
   longOverride = car_control.getCruiseControl().getOverride();
@@ -184,6 +197,7 @@ void HudRendererSP::draw(QPainter &p, const QRect &surface_rect) {
     int x_offset = -260;
     int y1_offset = -80;
     int y2_offset = -140;
+    int y3_offset = -200;
 
     int y_scc_v = 0, y_scc_m = 0;
     const int orders[2] = {y1_offset, y2_offset};
@@ -198,6 +212,9 @@ void HudRendererSP::draw(QPainter &p, const QRect &surface_rect) {
       drawSmartCruiseControlOnroadIcon(p, surface_rect, x_offset, y_scc_v, "SCC-V");
     }
     smartCruiseControlVisionFrame = smartCruiseControlVisionActive ? (smartCruiseControlVisionFrame + 1) : 0;
+    // -YJ- vision speed debug show
+    QString text = QString::number(smartCruiseControlVisionVtargetraw, 'f', 0) + "|" + QString::number(smartCruiseControlVisionYJVtargetraw, 'f', 0);
+    drawSmartCruiseControlOnroadIcon(p, surface_rect, x_offset, y3_offset, text.toStdString());
 
     // Smart Cruise Control - Map
     bool scc_map_active_pulse = pulseElement(smartCruiseControlMapFrame);
@@ -433,14 +450,17 @@ void HudRendererSP::drawBottomDevUI(QPainter &p, int x, int y) {
   UiElement dRelEl = DeveloperUi::getDRel(lead_status, lead_d_rel); // 前车距离
   rw += drawBottomDevUIElement(p, rw, y, dRelEl.value, dRelEl.label, dRelEl.units, dRelEl.color);
 
-  UiElement bearingDegElement = DeveloperUi::getBearingDeg(bearingAccuracyDeg, bearingDeg); // 行驶方向
-  rw += drawBottomDevUIElement(p, rw, y, bearingDegElement.value, bearingDegElement.label, bearingDegElement.units, bearingDegElement.color);
+  // UiElement bearingDegElement = DeveloperUi::getBearingDeg(bearingAccuracyDeg, bearingDeg); // 行驶方向
+  // rw += drawBottomDevUIElement(p, rw, y, bearingDegElement.value, bearingDegElement.label, bearingDegElement.units, bearingDegElement.color);
 
   // UiElement vEgoLeadElement = DeveloperUi::getVEgoLead(lead_status, lead_v_rel, vEgo, is_metric, speedUnit); // 前车速度
   // rw += drawBottomDevUIElement(p, rw, y, vEgoLeadElement.value, vEgoLeadElement.label, vEgoLeadElement.units, vEgoLeadElement.color);
 
   // UiElement aEgoElement = DeveloperUi::getAEgo(aEgo); // 加速度
   // rw += drawBottomDevUIElement(p, rw, y, aEgoElement.value, aEgoElement.label, aEgoElement.units, aEgoElement.color);
+
+  UiElement cpuUsagePercentElement = DeveloperUi::getCpuUsagePercent(cpuUsagePercent); // CPU占用
+  rw += drawBottomDevUIElement(p, rw, y, cpuUsagePercentElement.value, cpuUsagePercentElement.label, cpuUsagePercentElement.units, cpuUsagePercentElement.color);
 
   UiElement memEl = DeveloperUi::getMemoryUsagePercent(memoryUsagePercent); // 内存占用
   rw += drawBottomDevUIElement(p, rw, y, memEl.value, memEl.label, memEl.units, memEl.color);

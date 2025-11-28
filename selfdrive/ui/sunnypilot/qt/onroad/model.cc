@@ -155,7 +155,7 @@ void ModelRendererSP::drawLeadStatusPosition(QPainter &painter, const cereal::Ra
     float val = std::max(0.0f, d_rel);
     QString unit = is_metric ? "m" : "ft";
     if (!is_metric) val *= 3.28084f;
-    chevron_text[pos].append(QString::number(val, 'f', 0) + " " + unit);
+    chevron_text[pos].append(QString::number(val, 'f', 1) + " " + unit);
   }
 
   // Speed display

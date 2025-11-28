@@ -49,6 +49,7 @@ private:
   float curvature;
   float roll;
   int memoryUsagePercent;
+  float cpuUsagePercent;
   int devUiInfo;
   float gpsAccuracy;
   float altitude;
@@ -78,6 +79,10 @@ private:
   bool smartCruiseControlMapEnabled;
   bool smartCruiseControlMapActive;
   int smartCruiseControlMapFrame;
+  // -YJ-
+  float smartCruiseControlVisionVtargetraw;
+  float smartCruiseControlVisionYJVtargetraw;
+
   float speedLimit;
   float speedLimitLast;
   float speedLimitOffset;
