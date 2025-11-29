@@ -69,6 +69,7 @@ void HudRendererSP::updateState(const UIState &s) {
     smartCruiseControlMapActive = lp_sp.getSmartCruiseControl().getMap().getActive();
     smartCruiseControlVisionVtargetraw = lp_sp.getSmartCruiseControl().getVision().getVTargetRaw();
     smartCruiseControlVisionYJVtargetraw = lp_sp.getSmartCruiseControl().getVisionYJ().getVTargetRaw();
+    smartCruiseControlVisionYJVtarget = lp_sp.getSmartCruiseControl().getVisionYJ().getVTarget();
   }
   greenLightAlert = lp_sp.getE2eAlerts().getGreenLightAlert();
   leadDepartAlert = lp_sp.getE2eAlerts().getLeadDepartAlert();
@@ -266,6 +267,18 @@ void HudRendererSP::draw(QPainter &p, const QRect &surface_rect) {
         drawUpcomingSpeedLimit(p);
       }
     }
+
+    {
+      // VSC Speed
+      // Position speed limit sign next to set speed box
+      int sign_width_vsc = is_metric ? 200 : 172;
+      int sign_x_vsc = is_metric ? 480 : 472;
+      int sign_y_vsc = 45;
+      int sign_height_vsc = 204;
+      QRect sign_rect_vsc(sign_x_vsc, sign_y_vsc, sign_width_vsc, sign_height_vsc);
+      drawVscVisionSpeed(p, sign_rect_vsc);
+    }
+
 
     // Road Name
     drawRoadName(p, surface_rect);
@@ -539,6 +552,40 @@ void HudRendererSP::drawSpeedLimitSigns(QPainter &p, QRect &sign_rect) {
     p.setPen(QColor(255, 255, 255, alpha));
     p.drawText(offset_box_rect, Qt::AlignCenter, speedLimitSubText);
   }
+}
+
+void HudRendererSP::drawVscVisionSpeed(QPainter &p, QRect &sign_rect) {
+  QString speedLimitStr = QString::number(std::nearbyint(smartCruiseControlVisionYJVtarget*3.6), 'f', 0);
+
+  int alpha = 152;
+  QColor red_color = QColor(255, 0, 0, alpha);
+  QColor speed_color = QColor(0x91, 0x9b, 0x95, 0xf1);
+
+  // 统一使用US/Canada MUTCD style sign
+  p.setPen(Qt::NoPen);
+  p.setBrush(QColor(255, 255, 255, alpha));
+  p.drawRoundedRect(sign_rect, 32, 32);
+
+  // Inner border with violation color coding
+  QRect inner_rect = sign_rect.adjusted(10, 10, -10, -10);
+  QColor border_color = QColor(0, 0, 0, alpha);
+
+  p.setPen(QPen(border_color, 4));
+  p.setBrush(QColor(255, 255, 255, alpha));
+  p.drawRoundedRect(inner_rect, 22, 22);
+
+  // "SPEED LIMIT" text
+  p.setFont(InterFont(40, QFont::DemiBold));
+  p.setPen(QColor(0, 0, 0, alpha));
+  p.drawText(inner_rect.adjusted(0, 2, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("VSC"));
+  p.drawText(inner_rect.adjusted(0, 42, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("VISION"));
+
+  // Speed value with color coding
+  p.setFont(InterFont(90, QFont::Bold));
+
+  p.setPen(speed_color);
+  p.drawText(inner_rect.adjusted(0, 80, 0, 0), Qt::AlignTop | Qt::AlignHCenter, speedLimitStr);
+
 }
 
 void HudRendererSP::drawUpcomingSpeedLimit(QPainter &p) {

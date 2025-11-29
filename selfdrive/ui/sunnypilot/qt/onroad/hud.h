@@ -32,6 +32,7 @@ private:
   bool pulseElement(int frame);
   void drawSmartCruiseControlOnroadIcon(QPainter &p, const QRect &surface_rect, int x_offset, int y_offset, std::string name);
   void drawSpeedLimitSigns(QPainter &p, QRect &sign_rect);
+  void drawVscVisionSpeed(QPainter &p, QRect &sign_rect);
   void drawUpcomingSpeedLimit(QPainter &p);
   void drawRoadName(QPainter &p, const QRect &surface_rect);
   void drawSpeedLimitPreActiveArrow(QPainter &p, QRect &sign_rect);
@@ -82,6 +83,7 @@ private:
   // -YJ-
   float smartCruiseControlVisionVtargetraw;
   float smartCruiseControlVisionYJVtargetraw;
+  float smartCruiseControlVisionYJVtarget;
 
   float speedLimit;
   float speedLimitLast;

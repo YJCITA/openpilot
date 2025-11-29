@@ -29,7 +29,7 @@ _TURNING_LAT_ACC_TH = 1.6  # 当前横向加速度阈值,触发转向状态(m/s�
 _LEAVING_LAT_ACC_TH = 1.3  # 当前横向加速度阈值,触发离开弯道状态(m/s²)
 _FINISH_LAT_ACC_TH = 1.1  # 当前横向加速度阈值,结束转弯周期(m/s²)
 
-_A_LAT_REG_MAX = 2.  # 最大允许横向加速度(m/s²),用于计算目标速度
+_A_LAT_REG_MAX = 1.5  #  原始是2 太大最大允许横向加速度(m/s²),用于计算目标速度
 
 _NO_OVERSHOOT_TIME_HORIZON = 4.  # 时间窗口(秒),用于基于目标加速度计算期望速度
 
@@ -252,10 +252,9 @@ class SmartCruiseControlVision:
 
     仅在检测到前方有弯道时输出(曲率大于阈值)
     """
-    curvature_threshold = 0.01  # 曲率阈值(1/m),小于此值认为没有弯道
-    if self.max_curvature_ahead > curvature_threshold:
-      return self.v_target_curvature_based
-    return V_CRUISE_UNSET
+    # if self.is_active:
+    #   return max(self.v_target_curvature_based, MIN_V)
+    return self.v_target_curvature_based
 
   def get_a_target_curvature_based(self) -> float:
     """获取基于曲率的平滑加速度"""
