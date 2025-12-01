@@ -68,6 +68,7 @@ void HudRendererSP::updateState(const UIState &s) {
     smartCruiseControlMapEnabled = lp_sp.getSmartCruiseControl().getMap().getEnabled();
     smartCruiseControlMapActive = lp_sp.getSmartCruiseControl().getMap().getActive();
     smartCruiseControlVisionVtargetraw = lp_sp.getSmartCruiseControl().getVision().getVTargetRaw();
+    smartCruiseControlVisionVtarget = lp_sp.getSmartCruiseControl().getVision().getVTarget();
     smartCruiseControlVisionYJVtargetraw = lp_sp.getSmartCruiseControl().getVisionYJ().getVTargetRaw();
     smartCruiseControlVisionYJVtarget = lp_sp.getSmartCruiseControl().getVisionYJ().getVTarget();
   }
@@ -198,7 +199,7 @@ void HudRendererSP::draw(QPainter &p, const QRect &surface_rect) {
     int x_offset = -260;
     int y1_offset = -80;
     int y2_offset = -140;
-    int y3_offset = -200;
+    // int y3_offset = -200;
 
     int y_scc_v = 0, y_scc_m = 0;
     const int orders[2] = {y1_offset, y2_offset};
@@ -213,9 +214,9 @@ void HudRendererSP::draw(QPainter &p, const QRect &surface_rect) {
       drawSmartCruiseControlOnroadIcon(p, surface_rect, x_offset, y_scc_v, "SCC-V");
     }
     smartCruiseControlVisionFrame = smartCruiseControlVisionActive ? (smartCruiseControlVisionFrame + 1) : 0;
-    // -YJ- vision speed debug show
-    QString text = QString::number(smartCruiseControlVisionVtargetraw, 'f', 0) + "|" + QString::number(smartCruiseControlVisionYJVtargetraw, 'f', 0);
-    drawSmartCruiseControlOnroadIcon(p, surface_rect, x_offset, y3_offset, text.toStdString());
+    // // -YJ- vision speed debug show
+    // QString text = QString::number(smartCruiseControlVisionVtargetraw, 'f', 0) + "|" + QString::number(smartCruiseControlVisionYJVtargetraw, 'f', 0);
+    // drawSmartCruiseControlOnroadIcon(p, surface_rect, x_offset, y3_offset, text.toStdString());
 
     // Smart Cruise Control - Map
     bool scc_map_active_pulse = pulseElement(smartCruiseControlMapFrame);
@@ -272,7 +273,7 @@ void HudRendererSP::draw(QPainter &p, const QRect &surface_rect) {
       // VSC Speed
       // Position speed limit sign next to set speed box
       int sign_width_vsc = is_metric ? 200 : 172;
-      int sign_x_vsc = is_metric ? 480 : 472;
+      int sign_x_vsc = is_metric ? 500 : 472;
       int sign_y_vsc = 45;
       int sign_height_vsc = 204;
       QRect sign_rect_vsc(sign_x_vsc, sign_y_vsc, sign_width_vsc, sign_height_vsc);
@@ -555,7 +556,7 @@ void HudRendererSP::drawSpeedLimitSigns(QPainter &p, QRect &sign_rect) {
 }
 
 void HudRendererSP::drawVscVisionSpeed(QPainter &p, QRect &sign_rect) {
-  QString speedLimitStr = QString::number(std::nearbyint(smartCruiseControlVisionYJVtarget*3.6), 'f', 0);
+  QString speedLimitStr = QString::number(std::nearbyint(smartCruiseControlVisionVtarget*3.6), 'f', 0);
 
   int alpha = 152;
   QColor red_color = QColor(255, 0, 0, alpha);
@@ -574,11 +575,11 @@ void HudRendererSP::drawVscVisionSpeed(QPainter &p, QRect &sign_rect) {
   p.setBrush(QColor(255, 255, 255, alpha));
   p.drawRoundedRect(inner_rect, 22, 22);
 
-  // "SPEED LIMIT" text
+  //  text
   p.setFont(InterFont(40, QFont::DemiBold));
   p.setPen(QColor(0, 0, 0, alpha));
-  p.drawText(inner_rect.adjusted(0, 2, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("VSC"));
-  p.drawText(inner_rect.adjusted(0, 42, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("VISION"));
+  p.drawText(inner_rect.adjusted(0, 2, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("SCC"));
+  p.drawText(inner_rect.adjusted(0, 42, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("Vision"));
 
   // Speed value with color coding
   p.setFont(InterFont(90, QFont::Bold));

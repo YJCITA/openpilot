@@ -82,6 +82,7 @@ private:
   int smartCruiseControlMapFrame;
   // -YJ-
   float smartCruiseControlVisionVtargetraw;
+  float smartCruiseControlVisionVtarget;
   float smartCruiseControlVisionYJVtargetraw;
   float smartCruiseControlVisionYJVtarget;
 
