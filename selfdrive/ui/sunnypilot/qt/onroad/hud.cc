@@ -556,7 +556,7 @@ void HudRendererSP::drawSpeedLimitSigns(QPainter &p, QRect &sign_rect) {
 }
 
 void HudRendererSP::drawVscVisionSpeed(QPainter &p, QRect &sign_rect) {
-  QString speedLimitStr = QString::number(std::nearbyint(smartCruiseControlVisionVtarget*3.6), 'f', 0);
+  QString speedLimitStr = QString::number(std::nearbyint(smartCruiseControlVisionVtargetraw*3.6), 'f', 0);
 
   int alpha = 152;
   QColor red_color = QColor(255, 0, 0, alpha);
