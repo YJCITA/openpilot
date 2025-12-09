@@ -29,7 +29,7 @@ _TURNING_LAT_ACC_TH = 1.6  # 当前横向加速度阈值,触发转向状态(m/s�
 _LEAVING_LAT_ACC_TH = 1.3  # 当前横向加速度阈值,触发离开弯道状态(m/s²)
 _FINISH_LAT_ACC_TH = 1.1  # 当前横向加速度阈值,结束转弯周期(m/s²)
 
-_A_LAT_REG_MAX = 1.5  #  原始是2 太大最大允许横向加速度(m/s²),用于计算目标速度
+_A_LAT_REG_MAX = 1.25  #  原始是2 太大最大允许横向加速度(m/s²),用于计算目标速度
 
 _NO_OVERSHOOT_TIME_HORIZON = 4.  # 时间窗口(秒),用于基于目标加速度计算期望速度
 
@@ -152,6 +152,7 @@ class SmartCruiseControlVision:
     # 计算目标速度:基于最大曲率和最大允许横向加速度
     # v_target = sqrt(a_lat_max / κ_max)
     self.v_target = (_A_LAT_REG_MAX / max_curve) ** 0.5
+    self.v_target = min(self.v_target, 150/3.6)
 
   # --------计算基于曲率的算法结果-------
   #   new
