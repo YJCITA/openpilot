@@ -126,7 +126,7 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
 
 
 class DriverMonitoring:
-  def __init__(self, rhd_saved=False, settings=None, always_on=False):
+  def __init__(self, rhd_saved=False, settings=None, always_on=False, always_off=False):
     if settings is None:
       settings = DRIVER_MONITOR_SETTINGS()
     # init policy settings
@@ -144,6 +144,7 @@ class DriverMonitoring:
     self.ee2_calibrated = False
 
     self.always_on = always_on
+    self.always_off = always_off
     self.distracted_types = []
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
@@ -309,6 +310,11 @@ class DriverMonitoring:
 
   def _update_events(self, driver_engaged, op_engaged, standstill, wrong_gear, car_speed):
     self._reset_events()
+
+    # Always-off: disable driver monitoring when openpilot is engaged
+    if self.always_off and op_engaged:
+      return
+
     # Block engaging until ignition cycle after max number or time of distractions
     if self.terminal_alert_cnt >= self.settings._MAX_TERMINAL_ALERTS or \
        self.terminal_time >= self.settings._MAX_TERMINAL_DURATION:

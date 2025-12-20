@@ -20,6 +20,7 @@ DESCRIPTIONS = {
     "without a turn signal activated while driving over 31 mph (50 km/h)."
   ),
   "AlwaysOnDM": "Enable driver monitoring even when openpilot is not engaged.",
+  "AlwaysOffDM": "Disable driver monitoring even when openpilot is engaged.",
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
   "IsMetric": "Display speed in km/h instead of mph.",
   "RecordAudio": "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.",
@@ -67,6 +68,12 @@ class TogglesLayout(Widget):
         "Always-On Driver Monitoring",
         DESCRIPTIONS["AlwaysOnDM"],
         self._params.get_bool("AlwaysOnDM"),
+        icon="monitoring.png",
+      ),
+      toggle_item(
+        "Always-Off Driver Monitoring",
+        DESCRIPTIONS["AlwaysOffDM"],
+        self._params.get_bool("AlwaysOffDM"),
         icon="monitoring.png",
       ),
       toggle_item(

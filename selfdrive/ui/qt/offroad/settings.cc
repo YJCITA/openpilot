@@ -55,6 +55,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       false,
     },
     {
+      "AlwaysOffDM",
+      tr("Disable Driver Monitoring"),
+      tr("Disable driver monitoring all the time."),
+      "../assets/icons/monitoring.png",
+      false,
+    },
+    {
       "RecordFront",
       tr("Record and Upload Driver Camera"),
       tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
