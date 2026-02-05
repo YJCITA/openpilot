@@ -1,3 +1,156 @@
+sunnypilot 2025.003.000 (2026-01-30)
+========================
+* 🛠️ dev版本更新说明
+  * 拉取一些官方更新
+  * 同步20260130的dev更新
+
+
+
+
+sunnypilot 2025.003.000 (2026-01-27)
+========================
+* 🛠️ dev版本更新说明
+  * 前车驶离提醒时的前车图片更换
+  * 车道转向意图注释汉化（漏的）
+
+
+
+
+sunnypilot 2025.003.000 (2026-01-24)
+========================
+* 🛠️ dev版本更新说明
+  * 取消ImmediateDisableAlert的声音报警（for jungle）
+  * 同步一些更新
+  * “进入行驶模式”按钮颜色由灰色改为蓝色
+  * 支持tesla fsd14（虽然国内没有）
+  * 同步更新tesla混控
+  * 更换默认模型为WMI（同步SP）
+
+sunnypilot 2025.003.000 (2026-01-22)
+========================
+* 🛠️ dev版本更新说明
+  * 取消ImmediateDisableAlert的声音报警（for jungle）
+  * 同步一些更新
+  * “进入行驶模式”按钮颜色由灰色改为蓝色
+  * 支持tesla fsd14（虽然国内没有）
+  * 同步更新tesla混控
+  * 等等.....
+
+
+sunnypilot 2025.003.000 (2026-01-20)
+========================
+* 🛠️ dev版本更新说明
+  * 同步，将STEER_OVERRIDE_MAX_LAT_ACCEL = 1.0改为1.5
+
+
+
+
+
+sunnypilot 2025.003.000 (2026-01-18)
+========================
+* 🛠️ dev版本更新说明
+  * 同步2026年1月17日版特斯拉混控测试
+
+
+
+
+
+sunnypilot 2025.003.000 (2026-01-15)
+========================
+* 🛠️ dev版本更新说明
+  * 同步2026年1月15日新版特斯拉dev测试
+  * AGNOS系统版本从12.8升级为13.1
+  * 同步一些官方更新
+
+
+
+sunnypilot 2025.003.000 (2026-01-08)
+========================
+* 🛠️ dev版本更新说明
+  * 同步2026年1月7日新版特斯拉dev测试
+  * AGNOS系统版本从12.8升级为13.1
+  * 同步一些官方代码
+
+
+
+sunnypilot 2025.003.000 (2026-01-04)
+========================
+* 🛠️ dev版本更新说明
+  * 2025年12月新版dev测试
+  * AGNOS系统版本从12.8升级为13.1
+  * 同步一些官方代码
+
+
+
+
+sunnypilot 2025.003.000 (2025-12-30)
+========================
+* 🛠️ dev版本更新说明
+  * 2025年12月新版dev测试
+  * 同步其他车型的dbc
+  * PANDA中加入mr.one L机器代码
+
+
+
+
+sunnypilot 2025.003.000 (2025-12-26)
+========================
+* 🛠️ dev版本更新说明
+  * 2025年12月新版dev测试
+
+
+
+
+
+
+sunnypilot 2025.003.000 (2025-12-20)
+========================
+* 🛠️ dev版本更新说明
+  * 横向控制代码更新至#36364
+  * 离线后默认关屏时间设置为120秒
+
+
+
+
+sunnypilot 2025.003.000 (2025-12-18)
+========================
+* 🛠️ dev版本更新说明
+  * 提高横向加速度的动态响应，以适应更复杂的道路条件
+  * 在转向时减少突兀感，提升舒适度
+
+
+
+
+
+sunnypilot 2025.003.000 (2025-12-17)
+========================
+* 🛠️ dev版本更新说明
+  * SLA区段优化
+  * 踩刹车脱离acc行为优化，防止误触发
+  * 优化特斯拉的横向控制低速转弯抖动问题
+
+
+
+
+sunnypilot 2025.003.000 (2025-12-15)
+========================
+* 🛠️ 更新说明
+  * 调整摄像头曝光收敛速度加快；
+  * hud底部显示中，关闭“行驶方向”，增加“剩余存储”；
+  * 调整屏幕亮度范围及相关翻译；
+  * 选择“自动（暗）”时亮度范围为5%至30%；
+  * 选择“自动调节”时亮度范围为5%至100%。
+
+
+sunnypilot 2025.003.000 (2025-11-26)
+========================
+* 🛠️ 更新说明
+  * 更换默认模型为 The Cool People
+  * 驾驶模型选择器更新v10
+
+
+
+
 sunnypilot 2025.003.000 (2025-11-24)
 ========================
 * 🛠️ 更新说明
@@ -6,7 +159,7 @@ sunnypilot 2025.003.000 (2025-11-24)
   * "LAT"文字透明度80%，方向大于16度显示红色
 
 
-  
+
 sunnypilot 2025.003.000 (2025-11-22)
 ========================
 * 🛠️ 更新说明
@@ -126,6 +279,8 @@ sunnypilot Version 2025.001.000 (2025-10-25)
     * Intelligent longitudinal control adaptation
   * Speed Limit Assist (SLA)
     * Comprehensive speed limit integration featuring @pfeiferj's `mapd` for offline map limits downloads, a Speed Limit Resolver for sourcing data (from car, map, combined, etc), on-screen UI for Speed Limit Information/Warning, and Speed Limit Assist (SLA) to adjust cruise speed automatically.
+    * Currently disabled for Tesla with sunnypilot Longitudinal Control in release and Rivian with sunnypilot Longitudinal Control in all branches
+      * May return in future releases
   * Intelligent Cruise Button Management (ICBM)
     * System designed to manage the vehicle’s speed by sending cruise control button commands to the car’s ECU.
   * Smart Cruise Control Map & Vision (SCC-M / SCC-V)

@@ -85,7 +85,7 @@ def below_steer_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.S
     f" {get_display_speed(CP.minSteerSpeed, metric)} 以下速度行驶时无法自动转向",
     "",
     AlertStatus.userPrompt, AlertSize.small,
-    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.prompt, 0.4)
+    Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 0.4)
 
 
 def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
@@ -211,7 +211,7 @@ def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
 def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   text = "切换原厂车道保持辅助系统（LKAS）的开关以启用"
   if CP.brand == "tesla":
-    text = "切换到交通感知巡航控制（TACC）以启用"
+    text = "切换到 主动巡航控制（TACC） 以启用"
   elif CP.brand == "mazda":
     text = "启用车辆的LKAS系统以启用"
   elif CP.brand == "nissan":
@@ -772,13 +772,13 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # - CAN data is received, but some message are not received at the right frequency
   # If you're not writing a new car port, this is usually cause by faulty wiring
   EventName.canError: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("车型数据不匹配"),
     ET.PERMANENT: Alert(
-      "CAN Error: 请检查连接",
+      "车型数据不匹配",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 1., creation_delay=1.),
-    ET.NO_ENTRY: NoEntryAlert("CAN Error: 请检查连接"),
+    ET.NO_ENTRY: NoEntryAlert("车型数据不匹配"),
   },
 
   EventName.canBusMissing: {

@@ -11,10 +11,10 @@ from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.hardware import HARDWARE, PC, TICI
 from openpilot.common.realtime import Ratekeeper
 
-DEFAULT_FPS = int(os.getenv("FPS", "60"))
+DEFAULT_FPS = int(os.getenv("FPS", 20 if TICI else 60))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
@@ -114,7 +114,8 @@ class MouseState:
         time.monotonic(),
       )
       # Only add changes
-      if self._prev_mouse_event[slot] is None or ev[:-1] != self._prev_mouse_event[slot][:-1]:
+      prev = self._prev_mouse_event[slot]
+      if prev is None or ev[:-1] != prev[:-1]:
         with self._lock:
           self._events.append(ev)
         self._prev_mouse_event[slot] = ev
@@ -269,13 +270,14 @@ class GuiApplication:
             raise Exception
 
           if result >= 0:
-            # Execute callback with the result and clear the overlay
-            if self._modal_overlay.callback is not None:
-              self._modal_overlay.callback(result)
-
+            # Clear the overlay and execute the callback
+            original_modal = self._modal_overlay
             self._modal_overlay = ModalOverlay()
+            if original_modal.callback is not None:
+              original_modal.callback(result)
+          yield True
         else:
-          yield
+          yield False
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -326,7 +328,7 @@ class GuiApplication:
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
-    all_chars += "–✓×°"
+    all_chars += "–✓×°§"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)

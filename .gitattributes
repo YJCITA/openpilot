@@ -19,6 +19,9 @@ third_party/acados/*/t_renderer filter=lfs diff=lfs merge=lfs -text
 third_party/qt5/larch64/bin/lrelease filter=lfs diff=lfs merge=lfs -text
 third_party/qt5/larch64/bin/lupdate filter=lfs diff=lfs merge=lfs -text
 third_party/catch2/include/catch2/catch.hpp filter=lfs diff=lfs merge=lfs -text
+selfdrive/assets/fonts/NotoColorEmoji-Regular.ttf -filter=lfs -diff=lfs -merge=lfs
+selfdrive/assets/sounds/disengage.wav -filter=lfs -diff=lfs -merge=lfs
+selfdrive/assets/sounds/engage.wav -filter=lfs -diff=lfs -merge=lfs
 selfdrive/assets/sounds/prompt_single_high.wav -filter=lfs -diff=lfs -merge=lfs
 selfdrive/assets/sounds/prompt_single_low.wav -filter=lfs -diff=lfs -merge=lfs
 selfdrive/assets/training/step0.png -filter=lfs -diff=lfs -merge=lfs
@@ -40,6 +43,7 @@ selfdrive/assets/training/step15.png -filter=lfs -diff=lfs -merge=lfs
 selfdrive/assets/training/step16.png -filter=lfs -diff=lfs -merge=lfs
 selfdrive/assets/training/step17.png -filter=lfs -diff=lfs -merge=lfs
 selfdrive/assets/training/step18.png -filter=lfs -diff=lfs -merge=lfs
+selfdrive/modeld/models/dmonitoring_model.onnx -filter=lfs -diff=lfs -merge=lfs
 selfdrive/modeld/models/driving_policy.onnx -filter=lfs -diff=lfs -merge=lfs
 selfdrive/modeld/models/driving_vision.onnx -filter=lfs -diff=lfs -merge=lfs
 sunnypilot/selfdrive/assets/img_minus_arrow_down.png -filter=lfs -diff=lfs -merge=lfs
@@ -48,3 +52,9 @@ sunnypilot/selfdrive/assets/offroad/icon_display.png -filter=lfs -diff=lfs -merg
 sunnypilot/selfdrive/assets/images/green_light.png -filter=lfs -diff=lfs -merge=lfs
 sunnypilot/selfdrive/assets/images/lead_depart.png -filter=lfs -diff=lfs -merge=lfs
 sunnypilot/selfdrive/assets/images/spinner_sunnypilot.png -filter=lfs -diff=lfs -merge=lfs
+tools/jotpluggler/assets/pause.png -filter=lfs -diff=lfs -merge=lfs
+tools/jotpluggler/assets/play.png -filter=lfs -diff=lfs -merge=lfs
+tools/jotpluggler/assets/plus.png -filter=lfs -diff=lfs -merge=lfs
+tools/jotpluggler/assets/split_h.png -filter=lfs -diff=lfs -merge=lfs
+tools/jotpluggler/assets/split_v.png -filter=lfs -diff=lfs -merge=lfs
+tools/jotpluggler/assets/x.png -filter=lfs -diff=lfs -merge=lfs

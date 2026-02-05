@@ -8,7 +8,7 @@ from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButto
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, DEFAULT_TEXT_COLOR
 from openpilot.system.ui.widgets import Widget
 
 HEADER_HEIGHT = 80
@@ -37,7 +37,7 @@ class HomeLayout(Widget):
 
     self.current_state = HomeLayoutState.HOME
     self.last_refresh = 0
-    self.settings_callback: callable | None = None
+    self.settings_callback: Callable[[], None] | None = None
 
     self.update_available = False
     self.alert_count = 0
@@ -56,6 +56,10 @@ class HomeLayout(Widget):
     self._exp_mode_button = ExperimentalModeButton()
     self._setup_callbacks()
 
+  def show_event(self):
+    self.last_refresh = time.monotonic()
+    self._refresh()
+
   def _setup_callbacks(self):
     self.update_alert.set_dismiss_callback(lambda: self._set_state(HomeLayoutState.HOME))
     self.offroad_alert.set_dismiss_callback(lambda: self._set_state(HomeLayoutState.HOME))
@@ -72,7 +76,6 @@ class HomeLayout(Widget):
       self._refresh()
       self.last_refresh = current_time
 
-    self._handle_input()
     self._render_header()
 
     # Render content based on current state
@@ -83,7 +86,7 @@ class HomeLayout(Widget):
     elif self.current_state == HomeLayoutState.ALERTS:
       self._render_alerts_view()
 
-  def _update_layout_rects(self):
+  def _update_state(self):
     self.header_rect = rl.Rectangle(
       self._rect.x + CONTENT_MARGIN, self._rect.y + CONTENT_MARGIN, self._rect.width - 2 * CONTENT_MARGIN, HEADER_HEIGHT
     )
@@ -110,25 +113,13 @@ class HomeLayout(Widget):
     self.alert_notif_rect.x = notif_x
     self.alert_notif_rect.y = self.header_rect.y + (self.header_rect.height - 60) // 2
 
-  def _handle_input(self):
-    if not rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      return
-
-    mouse_pos = rl.get_mouse_position()
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
 
     if self.update_available and rl.check_collision_point_rec(mouse_pos, self.update_notif_rect):
       self._set_state(HomeLayoutState.UPDATE)
-      return
-
-    if self.alert_count > 0 and rl.check_collision_point_rec(mouse_pos, self.alert_notif_rect):
+    elif self.alert_count > 0 and rl.check_collision_point_rec(mouse_pos, self.alert_notif_rect):
       self._set_state(HomeLayoutState.ALERTS)
-      return
-
-    # Content area input handling
-    if self.current_state == HomeLayoutState.UPDATE:
-      self.update_alert.handle_input(mouse_pos, True)
-    elif self.current_state == HomeLayoutState.ALERTS:
-      self.offroad_alert.handle_input(mouse_pos, True)
 
   def _render_header(self):
     font = gui_app.font(FontWeight.MEDIUM)
@@ -136,7 +127,7 @@ class HomeLayout(Widget):
     # Update notification button
     if self.update_available:
       # Highlight if currently viewing updates
-      highlight_color = rl.Color(255, 140, 40, 255) if self.current_state == HomeLayoutState.UPDATE else rl.Color(255, 102, 0, 255)
+      highlight_color = rl.Color(75, 95, 255, 255) if self.current_state == HomeLayoutState.UPDATE else rl.Color(54, 77, 239, 255)
       rl.draw_rectangle_rounded(self.update_notif_rect, 0.3, 10, highlight_color)
 
       text = "UPDATE"

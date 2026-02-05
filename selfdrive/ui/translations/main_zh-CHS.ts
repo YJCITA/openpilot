@@ -171,7 +171,7 @@ Please use caution when using this feature. Only use the blinker when traffic an
     </message>
     <message>
         <source>Overrides the brightness of the device. This applies to both onroad and offroad screens. </source>
-        <translation>覆盖设备的亮度设置。此设置同时适用于行驶界面和设置界面。选择 自动（深色） 时，亮度自动调整范围为0至100；选择 自动调节 时，亮度自动调整范围为10至100。 </translation>
+        <translation>覆盖设备的亮度设置。此设置同时适用于行驶界面和设置界面。选择 自动（深色） 时，亮度自动调整范围为5至30；选择 自动调节 时，亮度自动调整范围为5至100。 </translation>
     </message>
 </context>
 <context>
@@ -224,7 +224,7 @@ Please use caution when using this feature. Only use the blinker when traffic an
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation>ADB（Android调试桥接）允许通过USB或网络连接到您的设备。更多信息请参见 [https://docs.comma.ai/how-to/connect-to-comma](https://docs.comma.ai/how-to/connect-to-comma)。</translation>
+        <translation>ADB（Android调试桥接）允许通过USB或网络连接到您的设备。更多信息请参见 https://docs.comma.ai/how-to/connect-to-comma。</translation>
     </message>
     <message>
         <source>On this car, sunnypilot defaults to the car&apos;s built-in ACC instead of sunnypilot&apos;s longitudinal control. Enable this to switch to sunnypilot longitudinal control. Enabling Experimental mode is recommended when enabling sunnypilot longitudinal control alpha.</source>
@@ -1173,10 +1173,6 @@ DEPARTING</source>
         <translation>决策模型</translation>
     </message>
     <message>
-        <source>If you’re driving at 20 mph (32 km/h) or below and have your blinker on, the car will plan a turn in that direction at the nearest drivable path. This prevents situations (like at red lights) where the car might plan the wrong turn direction.</source>
-        <translation>如果你的车速在20英里/小时（32公里/小时）或以下，并且已打开转向灯，汽车将在最近的可行驶路径上计划朝该方向转弯。这可以避免在红绿灯等情况下，汽车可能会计划错误的转弯方向的情况。</translation>
-    </message>
-    <message>
         <source>Live Learning Steer Delay</source>
         <translation>实时学习转向延迟</translation>
     </message>
@@ -1281,6 +1277,10 @@ The default software delay value is 0.2</source>
     <message>
         <source>Fetching Latest Models</source>
         <translation>正在获取最新驾驶模型列表</translation>
+    </message>
+    <message>
+        <source>If you’re driving at 20 mph (32 km/h) or below and have your blinker on, the car will plan a turn in that direction at the nearest drivable path. This prevents situations (like at red lights) where the car might plan the wrong turn direction.</source>
+        <translation>如果你的车速在20英里/小时（32公里/小时）或以下，并且已打开转向灯，汽车将在最近的可行驶路径上计划朝该方向转弯。这可以避免在红绿灯等情况下，汽车可能会计划错误的转弯方向的情况。</translation>
     </message>
     <message>
         <source>Enable this for the car to learn and adapt its steering response time. Disable to use a fixed steering response time. Keeping this on provides the stock openpilot experience.</source>
@@ -2528,8 +2528,8 @@ Data</source>
         <translation>启用 sunnylink 上传器，以允许 sunnypilot 将您的驾驶数据上传至 sunnypilot 服务器。（仅限最高级别用户使用，对您没有任何实际好处，仅用于测试数据量。）</translation>
     </message>
     <message>
-        <source>Enable sunnylink uploader (infrastructure test)</source>
-        <translation>启用 sunnylink 上传器 (系统测试)</translation>
+        <source>Enable sunnylink uploader (just for testing infrastructure)</source>
+        <translation>启用 sunnylink 上传器 (仅用于测试)</translation>
     </message>
     <message>
         <source>🚀 sunnylink 🚀</source>

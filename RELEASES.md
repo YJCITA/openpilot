@@ -1,33 +1,34 @@
-Version 0.10.1 (2025-10-20)
+Version 0.10.4 (2026-02-17)
 ========================
-* 此版本为dzid26的251018版的vtb-lkas-pause修改C3版本并汉化
-* 同步master更新至#1401
+* Lexus LS 2018 support thanks to Hacheoy!
 
-
-
-
-Version 0.10.1 (2025-10-19)
+Version 0.10.3 (2025-12-17)
 ========================
-* 此版本为dzid26的251018版的vtb-lkas-pause修改C3版本并汉化
-* 修改开机图片及新手指南中文
+* New driving model #36249
+  * New temporal policy architecture
+  * New on-policy training physics noise model
+* New driver monitoring model #36409
+  * Trained on a new dataset, including comma four data
+* Improved inter-process communication memory efficiency
 
-
-
-
-
-Version 0.10.1 (2025-10-18)
+Version 0.10.2 (2025-11-19)
 ========================
-* 此版本为dzid26的251018版的vtb-lkas-pause修改C3版本并汉化
-* 同步master的更新
-
-
-
-
+* comma four support
 
 Version 0.10.1 (2025-09-08)
 ========================
-* Record driving feedback using LKAS button
-* Honda City 2023 support thanks to drFritz!
+* New driving model #36276
+  * World Model: removed global localization inputs
+  * World Model: 2x the number of parameters
+  * World Model: trained on 4x the number of segments
+  * VAE Compression Model: new architecture and training objective
+  * Driving Vision Model: trained on 4x the number of segments
+* New Driver Monitoring model #36198
+* Acura TLX 2021 support thanks to MVL!
+* Honda City 2023 support thanks to vanillagorillaa and drFritz!
+* Honda N-Box 2018 support thanks to miettal!
+* Honda Odyssey 2021-25 support thanks to csouers and MVL!
+* Honda Passport 2026 support thanks to vanillagorillaa and MVL!
 
 Version 0.10.0 (2025-08-05)
 ========================

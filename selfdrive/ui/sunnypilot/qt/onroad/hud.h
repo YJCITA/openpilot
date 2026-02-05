@@ -51,6 +51,7 @@ private:
   float roll;
   int memoryUsagePercent;
   float cpuUsagePercent;
+  int freeSpacePercent;
   int devUiInfo;
   float gpsAccuracy;
   float altitude;

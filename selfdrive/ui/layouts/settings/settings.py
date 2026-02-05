@@ -2,7 +2,6 @@ import pyray as rl
 from dataclasses import dataclass
 from enum import IntEnum
 from collections.abc import Callable
-from openpilot.selfdrive.ui.layouts.network import NetworkLayout
 from openpilot.selfdrive.ui.layouts.settings.developer import DeveloperLayout
 from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
 from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
@@ -10,7 +9,9 @@ from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.network import NetworkUI
 
 # Settings close button
 SETTINGS_CLOSE_TEXT = "×"
@@ -43,7 +44,7 @@ class PanelType(IntEnum):
 @dataclass
 class PanelInfo:
   name: str
-  instance: object
+  instance: Widget
   button_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
 
 
@@ -53,9 +54,12 @@ class SettingsLayout(Widget):
     self._current_panel = PanelType.DEVICE
 
     # Panel configuration
+    wifi_manager = WifiManager()
+    wifi_manager.set_active(False)
+
     self._panels = {
       PanelType.DEVICE: PanelInfo("Device", DeviceLayout()),
-      PanelType.NETWORK: PanelInfo("Network", NetworkLayout()),
+      PanelType.NETWORK: PanelInfo("Network", NetworkUI(wifi_manager)),
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayout()),
       PanelType.SOFTWARE: PanelInfo("Software", SoftwareLayout()),
       PanelType.FIREHOSE: PanelInfo("Firehose", FirehoseLayout()),
@@ -132,25 +136,29 @@ class SettingsLayout(Widget):
     if panel.instance:
       panel.instance.render(content_rect)
 
-  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
     # Check close button
     if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
       if self._close_callback:
         self._close_callback()
-      return True
+      return
 
     # Check navigation buttons
     for panel_type, panel_info in self._panels.items():
       if rl.check_collision_point_rec(mouse_pos, panel_info.button_rect):
         self.set_current_panel(panel_type)
-        return True
-
-    return False
+        return
 
   def set_current_panel(self, panel_type: PanelType):
     if panel_type != self._current_panel:
+      self._panels[self._current_panel].instance.hide_event()
       self._current_panel = panel_type
+      self._panels[self._current_panel].instance.show_event()
 
-  def close_settings(self):
-    if self._close_callback:
-      self._close_callback()
+  def show_event(self):
+    super().show_event()
+    self._panels[self._current_panel].instance.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._panels[self._current_panel].instance.hide_event()

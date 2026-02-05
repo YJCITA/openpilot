@@ -11,7 +11,7 @@ import shutil
 import pyray as rl
 
 from cereal import log
-from openpilot.common.run import run_cmd
+from openpilot.common.utils import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight
@@ -19,7 +19,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import Label, TextAlignment
-from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
+from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManager
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -72,8 +72,7 @@ class Setup(Widget):
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
-    self.wifi_manager = WifiManagerWrapper()
-    self.wifi_ui = WifiManagerUI(self.wifi_manager)
+    self.wifi_ui = WifiManagerUI(WifiManager())
     self.keyboard = Keyboard()
     self.selected_radio = None
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
@@ -344,7 +343,7 @@ class Setup(Widget):
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
 
       # give time for installer UI to take over
-      time.sleep(1)
+      time.sleep(0.1)
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
@@ -370,7 +369,9 @@ class Setup(Widget):
 
       fd, tmpfile = tempfile.mkstemp(prefix="installer_")
 
-      headers = {"User-Agent": USER_AGENT, "X-openpilot-serial": HARDWARE.get_serial()}
+      headers = {"User-Agent": USER_AGENT,
+                 "X-openpilot-serial": HARDWARE.get_serial(),
+                 "X-openpilot-device-type": HARDWARE.get_device_type()}
       req = urllib.request.Request(self.download_url, headers=headers)
 
       with open(tmpfile, 'wb') as f, urllib.request.urlopen(req, timeout=30) as response:
@@ -407,7 +408,7 @@ class Setup(Widget):
         f.write(self.download_url)
 
       # give time for installer UI to take over
-      time.sleep(5)
+      time.sleep(0.1)
       gui_app.request_close()
 
     except Exception:

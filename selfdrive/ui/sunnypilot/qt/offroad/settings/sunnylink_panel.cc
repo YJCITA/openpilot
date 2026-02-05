@@ -90,7 +90,7 @@ SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
   QString sunnylinkUploaderDesc = tr("Enable sunnylink uploader to allow sunnypilot to upload your driving data to sunnypilot servers. (only for highest tiers, and does NOT bring ANY benefit to you. We are just testing data volume.)");
   sunnylinkUploaderEnabledBtn = new ParamControlSP(
     "EnableSunnylinkUploader",
-    tr("Enable sunnylink uploader (infrastructure test)"),
+    tr("Enable sunnylink uploader (just for testing infrastructure)"),
     sunnylinkUploaderDesc,
     "", nullptr, true);
   list->addItem(sunnylinkUploaderEnabledBtn);
@@ -290,7 +290,7 @@ void SunnylinkPanel::updatePanel() {
   pairSponsorBtn->setEnabled(!is_onroad && is_sunnylink_enabled);
   pairSponsorBtn->setValue(is_paired ? tr("Paired") : tr("Not Paired"));
 
-  sunnylinkUploaderEnabledBtn->setEnabled(max_current_sponsor_rule.roleTier == SponsorTier::Guardian && is_sunnylink_enabled);
+  sunnylinkUploaderEnabledBtn->setEnabled(max_current_sponsor_rule.roleTier >= SponsorTier::Novice && is_sunnylink_enabled);
 
   if (!is_sunnylink_enabled) {
     sunnylinkEnabledBtn->setValue("");

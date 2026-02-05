@@ -63,6 +63,7 @@ class ModelState(ModelStateBase):
     self.LAT_SMOOTH_SECONDS = float(overrides.get('lat', ".0"))
     self.LONG_SMOOTH_SECONDS = float(overrides.get('long', ".0"))
     self.MIN_LAT_CONTROL_SPEED = 0.3
+    self.PLANPLUS_CONTROL: float = 1.0
 
     buffer_length = 5 if self.model_runner.is_20hz else 2
     self.frames = {name: DrivingModelFrame(context, buffer_length) for name in self.model_runner.vision_input_names}
@@ -157,11 +158,14 @@ class ModelState(ModelStateBase):
   def get_action_from_model(self, model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
                             lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
     plan = model_output['plan'][0]
+    if 'planplus' in model_output:
+      recovery_power = self.PLANPLUS_CONTROL * (0.75 if v_ego > 20.0 else 1.0)
+      plan = plan + recovery_power * model_output['planplus'][0]
     desired_accel, should_stop = get_accel_from_plan(plan[:, Plan.VELOCITY][:, 0], plan[:, Plan.ACCELERATION][:, 0], self.constants.T_IDXS,
                                                      action_t=long_action_t)
     desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, self.LONG_SMOOTH_SECONDS)
 
-    desired_curvature = get_curvature_from_output(model_output, v_ego, lat_action_t, self.mlsim)
+    desired_curvature = get_curvature_from_output(model_output, plan, v_ego, lat_action_t, self.mlsim)
     if self.generation is not None and self.generation >= 10: # smooth curvature for post FOF models
       if v_ego > self.MIN_LAT_CONTROL_SPEED:
         desired_curvature = smooth_value(desired_curvature, prev_action.desiredCurvature, self.LAT_SMOOTH_SECONDS)
@@ -284,6 +288,7 @@ def main(demo=False):
     v_ego = max(sm["carState"].vEgo, 0.)
     if sm.frame % 60 == 0:
       model.lat_delay = get_lat_delay(params, sm["liveDelay"].lateralDelay)
+      model.PLANPLUS_CONTROL = params.get("PlanplusControl", return_default=True)
     lat_delay = model.lat_delay + model.LAT_SMOOTH_SECONDS
     if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)

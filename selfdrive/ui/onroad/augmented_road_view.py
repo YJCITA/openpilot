@@ -1,6 +1,5 @@
 import numpy as np
 import pyray as rl
-from collections.abc import Callable
 from cereal import log
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, UI_BORDER_SIZE
@@ -27,6 +26,7 @@ BORDER_COLORS = {
 
 WIDE_CAM_MAX_SPEED = 10.0  # m/s (22 mph)
 ROAD_CAM_MIN_SPEED = 15.0  # m/s (34 mph)
+INF_POINT = np.array([1000.0, 0.0, 0.0])
 
 
 class AugmentedRoadView(CameraView):
@@ -38,9 +38,7 @@ class AugmentedRoadView(CameraView):
     self.view_from_calib = view_frame_from_device_frame.copy()
     self.view_from_wide_calib = view_frame_from_device_frame.copy()
 
-    self._last_calib_time: float = 0
-    self._last_rect_dims = (0.0, 0.0)
-    self._last_stream_type = stream_type
+    self._matrix_cache_key = (0, 0.0, 0.0, stream_type)
     self._cached_matrix: np.ndarray | None = None
     self._content_rect = rl.Rectangle()
 
@@ -48,12 +46,6 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer = HudRenderer()
     self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
-
-    # Callbacks
-    self._click_callback: Callable | None = None
-
-  def set_callbacks(self, on_click: Callable | None = None):
-    self._click_callback = on_click
 
   def _render(self, rect):
     # Only render when system is started to avoid invalid data access
@@ -73,9 +65,6 @@ class AugmentedRoadView(CameraView):
       rect.height - 2 * UI_BORDER_SIZE,
     )
 
-    # Draw colored border based on driving state
-    self._draw_border(rect)
-
     # Enable scissor mode to clip all rendering within content rectangle boundaries
     # This creates a rendering viewport that prevents graphics from drawing outside the border
     rl.begin_scissor_mode(
@@ -91,8 +80,8 @@ class AugmentedRoadView(CameraView):
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
-    if not self.alert_renderer.render(self._content_rect):
-      self.driver_state_renderer.render(self._content_rect)
+    self.alert_renderer.render(self._content_rect)
+    self.driver_state_renderer.render(self._content_rect)
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
@@ -100,15 +89,24 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
-    # Handle click events if no HUD interaction occurred
-    if not self._hud_renderer.handle_mouse_event():
-      if self._click_callback and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-        if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
-          self._click_callback()
+    # Draw colored border based on driving state
+    self._draw_border(rect)
+
+  def _handle_mouse_press(self, _):
+    if not self._hud_renderer.user_interacting() and self._click_callback is not None:
+      self._click_callback()
+
+  def _handle_mouse_release(self, _):
+    # We only call click callback on press if not interacting with HUD
+    pass
 
   def _draw_border(self, rect: rl.Rectangle):
+    rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, rl.BLACK)
+    border_roundness = 0.12
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
-    rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, border_color)
+    border_rect = rl.Rectangle(rect.x + UI_BORDER_SIZE, rect.y + UI_BORDER_SIZE,
+                               rect.width - 2 * UI_BORDER_SIZE, rect.height - 2 * UI_BORDER_SIZE)
+    rl.draw_rectangle_rounded_lines_ex(border_rect, border_roundness, 10, UI_BORDER_SIZE, border_color)
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
@@ -151,12 +149,13 @@ class AugmentedRoadView(CameraView):
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     # Check if we can use cached matrix
-    calib_time = ui_state.sm.recv_frame['liveCalibration']
-    current_dims = (self._content_rect.width, self._content_rect.height)
-    if (self._last_calib_time == calib_time and
-        self._last_rect_dims == current_dims and
-        self._last_stream_type == self.stream_type and
-        self._cached_matrix is not None):
+    cache_key = (
+      ui_state.sm.recv_frame['liveCalibration'],
+      self._content_rect.width,
+      self._content_rect.height,
+      self.stream_type
+    )
+    if cache_key == self._matrix_cache_key and self._cached_matrix is not None:
       return self._cached_matrix
 
     # Get camera configuration
@@ -167,9 +166,8 @@ class AugmentedRoadView(CameraView):
     zoom = 2.0 if is_wide_camera else 1.1
 
     # Calculate transforms for vanishing point
-    inf_point = np.array([1000.0, 0.0, 0.0])
     calib_transform = intrinsic @ calibration
-    kep = calib_transform @ inf_point
+    kep = calib_transform @ INF_POINT
 
     # Calculate center points and dimensions
     x, y = self._content_rect.x, self._content_rect.y
@@ -192,9 +190,7 @@ class AugmentedRoadView(CameraView):
       x_offset, y_offset = 0, 0
 
     # Cache the computed transformation matrix to avoid recalculations
-    self._last_calib_time = calib_time
-    self._last_rect_dims = current_dims
-    self._last_stream_type = self.stream_type
+    self._matrix_cache_key = cache_key
     self._cached_matrix = np.array([
       [zoom * 2 * cx / w, 0, -x_offset / w * 2],
       [0, zoom * 2 * cy / h, -y_offset / h * 2],
