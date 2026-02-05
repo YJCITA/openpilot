@@ -221,6 +221,7 @@ class LongitudinalMpc:
   def __init__(self, dt=DT_MDL):
     self.dt = dt
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
+    self.mode = 'acc'  # Default mode: 'acc' or 'blended'
     self.reset()
     self.source = SOURCES[2]
 
