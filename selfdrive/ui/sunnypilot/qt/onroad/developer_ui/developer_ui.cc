@@ -106,6 +106,15 @@ UiElement DeveloperUi::getMemoryUsagePercent(int memory_usage_percent) {
   return UiElement(value, "内存占用", "", color);
 }
 
+// 剩余存储显示
+UiElement DeveloperUi::getFreeSpacePercent(int free_space_percent) {
+    QString value = QString("%1%2").arg(QString::number(free_space_percent, 'd', 0)).arg("%");
+    QColor color = (free_space_percent < 15) ? QColor(255, 188, 0, 200) : QColor(255, 255, 255, 200);
+  
+    return UiElement(value, "剩余存储", "", color);
+  }
+
+  
 UiElement DeveloperUi::getCpuUsagePercent(float cpu_usage_percent) {
   QString value = QString("%1%2").arg(QString::number(cpu_usage_percent, 'd', 0)).arg("%");
   QColor color = (cpu_usage_percent > 85) ? QColor(255, 188, 0, 200) : QColor(255, 255, 255, 200);

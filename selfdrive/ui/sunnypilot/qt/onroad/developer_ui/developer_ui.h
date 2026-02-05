@@ -18,6 +18,7 @@ public:
   static UiElement getActualLateralAccel(float curvature, float v_ego, float roll, bool lat_active, bool steer_override);
   static UiElement getSteeringAngleDesiredDeg(bool lat_active, float steer_angle_desired, float angle_steers);
   static UiElement getMemoryUsagePercent(int memory_usage_percent);
+  static UiElement getFreeSpacePercent(int free_space_percent);
   static UiElement getCpuUsagePercent(float cpu_usage_percent);
   static UiElement getAEgo(float a_ego);
   static UiElement getVEgoLead(bool lead_status, float lead_v_rel, float v_ego, bool is_metric, const QString &speed_unit);
