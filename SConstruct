@@ -9,6 +9,38 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
+# Set C_INCLUDE_PATH early for PC builds to resolve "board/can.h" in panda tests
+# This must be set BEFORE any SConscript files are loaded, so panda submodule
+# can inherit it when creating Environment. This allows can_common_declarations.h
+# to find board/can.h without modifying panda submodule.
+# C_INCLUDE_PATH is a standard compiler environment variable that gcc/clang automatically uses
+# Note: We use os.getcwd() here since __file__ is not available in SConstruct
+# The SConstruct file is always executed from the project root
+panda_root_include = os.path.abspath(os.path.join(os.getcwd(), 'panda'))
+existing_c_include_path = os.environ.get('C_INCLUDE_PATH', '')
+if panda_root_include not in existing_c_include_path:
+  if existing_c_include_path:
+    c_include_path_value = f"{panda_root_include}:{existing_c_include_path}"
+  else:
+    c_include_path_value = panda_root_include
+  os.environ["C_INCLUDE_PATH"] = c_include_path_value
+
+# Monkey-patch SCons Environment to always include C_INCLUDE_PATH from os.environ
+# This is needed because panda/tests/libpanda/SConscript creates Environment()
+# without ENV parameter, so it only inherits PATH, not C_INCLUDE_PATH.
+# By patching Environment.__init__, we ensure C_INCLUDE_PATH is always included.
+import SCons.Environment
+_original_environment_init = SCons.Environment.Environment.__init__
+def _patched_environment_init(self, *args, **kwargs):
+    _original_environment_init(self, *args, **kwargs)
+    # If C_INCLUDE_PATH is in os.environ but not in Environment ENV, add it
+    if 'C_INCLUDE_PATH' in os.environ:
+        if 'ENV' not in self:
+            self['ENV'] = {}
+        if 'C_INCLUDE_PATH' not in self['ENV']:
+            self['ENV']['C_INCLUDE_PATH'] = os.environ['C_INCLUDE_PATH']
+SCons.Environment.Environment.__init__ = _patched_environment_init
+
 # pending upstream fix - https://github.com/SCons/scons/issues/4461
 #SetOption('warn', 'all')
 
@@ -80,6 +112,11 @@ lenv = {
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
+
+# C_INCLUDE_PATH is already set at the top of this file
+# Add it to lenv so main Environment also has it
+if 'C_INCLUDE_PATH' in os.environ:
+  lenv["C_INCLUDE_PATH"] = os.environ["C_INCLUDE_PATH"]
 
 rpath = []
 

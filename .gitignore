@@ -107,3 +107,6 @@ Pipfile
 code_auto
 tools/plotjuggler_yj/
 .vscode
+.cursor
+
+selfdrive/ui/translations/*.qm

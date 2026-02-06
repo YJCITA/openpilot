@@ -325,7 +325,12 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
         s.segment_tree.build(s.vals);
       }
       const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
-      s.series->replace(QVector<QPointF>(points.cbegin(), points.cend()));
+      QVector<QPointF> qpoints;
+      qpoints.reserve(points.size());
+      for (const auto &pt : points) {
+        qpoints.append(pt);
+      }
+      s.series->replace(qpoints);
     }
   }
   updateAxisY();
@@ -840,7 +845,12 @@ void ChartView::setSeriesType(SeriesType type) {
     for (auto &s : sigs) {
       s.series = createSeries(series_type, s.sig->color);
       const auto &points = series_type == SeriesType::StepLine ? s.step_vals : s.vals;
-      s.series->replace(QVector<QPointF>(points.cbegin(), points.cend()));
+      QVector<QPointF> qpoints;
+      qpoints.reserve(points.size());
+      for (const auto &pt : points) {
+        qpoints.append(pt);
+      }
+      s.series->replace(qpoints);
     }
     updateSeriesPoints();
     updateTitle();
