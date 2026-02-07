@@ -8,12 +8,14 @@
 #include "selfdrive/ui/sunnypilot/qt/widgets/drive_stats.h"
 
 #include <QDebug>
+#include <QFile>
 #include <QGridLayout>
 #include <QVBoxLayout>
 
 #include "common/params.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
+#include "system/hardware/hw.h"
 
 static QLabel* newLabel(const QString& text, const QString &type) {
   QLabel* label = new QLabel(text);
@@ -55,6 +57,13 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
     QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/stats";
     RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &DriveStats::parseResponse);
+  } else {
+    // Standalone mode: read from local drive_info/stats.json
+    localStatsWatcher_ = new QFileSystemWatcher(this);
+    QString path = QString::fromStdString(Path::drive_info_root() + "/stats.json");
+    localStatsWatcher_->addPath(path);
+    QObject::connect(localStatsWatcher_, &QFileSystemWatcher::fileChanged, this, &DriveStats::loadLocalStats);
+    loadLocalStats();
   }
 
   setStyleSheet(R"(
@@ -80,6 +89,19 @@ void DriveStats::updateStats() {
   QJsonObject json = stats_.object();
   update(json["all"].toObject(), all_);
   update(json["week"].toObject(), week_);
+}
+
+void DriveStats::loadLocalStats() {
+  QString path = QString::fromStdString(Path::drive_info_root() + "/stats.json");
+  QFile file(path);
+  if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QString content = QString::fromUtf8(file.readAll());
+    file.close();
+    parseResponse(content, true);
+  }
+  if (localStatsWatcher_ != nullptr && !localStatsWatcher_->files().contains(path)) {
+    localStatsWatcher_->addPath(path);
+  }
 }
 
 void DriveStats::parseResponse(const QString& response, bool success) {

@@ -11,6 +11,7 @@ from cereal import log
 from openpilot.common.utils import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, LPABase, ThermalConfig, ThermalZone
+from openpilot.system.hardware import C3
 from openpilot.system.hardware.tici import iwlist
 from openpilot.system.hardware.tici.esim import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
@@ -403,6 +404,10 @@ class Tici(HardwareBase):
       return 0
 
   def initialize_hardware(self):
+    # C3: mount NVMe at /data/media (AGNOS /etc is read-only so fstab cannot be used)
+    if C3 and not Path("/data/media").is_mount() and os.path.exists("/dev/nvme0n1"):
+      subprocess.run(["sudo", "mount", "/dev/nvme0n1", "/data/media"], timeout=10)
+
     if self.amplifier is not None:
       self.amplifier.initialize_configuration(self.get_device_type())
 

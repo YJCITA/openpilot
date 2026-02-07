@@ -9,6 +9,7 @@
 
 #include <QJsonDocument>
 #include <QLabel>
+#include <QFileSystemWatcher>
 
 class DriveStats : public QFrame {
   Q_OBJECT
@@ -19,10 +20,12 @@ public:
 private:
   void showEvent(QShowEvent *event) override;
   void updateStats();
+  void loadLocalStats();
   inline QString getDistanceUnit() const { return metric_ ? tr("KM") : tr("Miles"); }
 
   bool metric_;
   QJsonDocument stats_;
+  QFileSystemWatcher* localStatsWatcher_ = nullptr;
   struct StatsLabels {
     QLabel *routes, *distance, *distance_unit, *hours;
   } all_, week_;

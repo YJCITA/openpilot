@@ -84,4 +84,15 @@ namespace Path {
   inline std::string model_root() {
     return Hardware::PC() ? Path::comma_home() + "/media/0/models" : "/data/media/0/models";
   }
+
+  inline std::string drive_info_root() {
+    if (const char *env = getenv("LOG_ROOT")) {
+      std::string root(env);
+      size_t pos = root.find("/realdata");
+      if (pos != std::string::npos) {
+        return root.substr(0, pos) + "/drive_info";
+      }
+    }
+    return Hardware::PC() ? Path::comma_home() + "/media/0/drive_info" : "/data/media/0/drive_info";
+  }
 }  // namespace Path

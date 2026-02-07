@@ -63,6 +63,14 @@ class Paths:
       return "/data/stats_sp/"
 
   @staticmethod
+  def drive_info_root() -> str:
+    if os.environ.get('LOG_ROOT', False):
+      return str(Path(os.environ['LOG_ROOT']).parent / "drive_info")
+    if PC:
+      return str(Path(Paths.comma_home()) / "media" / "0" / "drive_info")
+    return "/data/media/0/drive_info"
+
+  @staticmethod
   def config_root() -> str:
     if PC:
       return Paths.comma_home()
