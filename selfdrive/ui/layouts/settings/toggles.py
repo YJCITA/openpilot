@@ -20,6 +20,7 @@ DESCRIPTIONS = {
     "without a turn signal activated while driving over 31 mph (50 km/h)."
   ),
   "AlwaysOnDM": "Enable driver monitoring even when openpilot is not engaged.",
+  "DriverMonitoringEnabled": "Enable driver monitoring model and alerts. When off, no distraction detection or alerts.",
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
   "IsMetric": "Display speed in km/h instead of mph.",
   "RecordAudio": "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.",
@@ -70,6 +71,21 @@ class TogglesLayout(Widget):
         icon="monitoring.png",
       ),
       toggle_item(
+        "Driver Monitoring",
+        DESCRIPTIONS["DriverMonitoringEnabled"],
+        self._params.get_bool("DriverMonitoringEnabled"),
+        icon="monitoring.png",
+      ),
+      multiple_button_item(
+        "Driver Monitoring Alert Sensitivity",
+        "Adjust awareness decay time. Higher = slower alerts. 1x = original, 3x = 3x longer.",
+        buttons=["1x", "2x", "3x"],
+        button_width=255,
+        callback=self._set_dm_time_multiplier,
+        selected_index=self._params.get("DriverMonitoringTimeMultiplierIndex", return_default=True) or 2,
+        icon="monitoring.png"
+      ),
+      toggle_item(
         "Record and Upload Driver Camera",
         DESCRIPTIONS["RecordFront"],
         self._params.get_bool("RecordFront"),
@@ -93,3 +109,6 @@ class TogglesLayout(Widget):
 
   def _set_longitudinal_personality(self, button_index: int):
     self._params.put("LongitudinalPersonality", button_index)
+
+  def _set_dm_time_multiplier(self, button_index: int):
+    self._params.put("DriverMonitoringTimeMultiplierIndex", str(button_index))

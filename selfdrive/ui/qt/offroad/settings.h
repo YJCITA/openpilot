@@ -88,6 +88,7 @@ protected:
   Params params;
   std::map<std::string, ParamControl*> toggles;
   ButtonParamControl *long_personality_setting;
+  ButtonParamControl *dm_time_multiplier_setting;
 
   virtual void updateToggles();
 };

@@ -20,15 +20,19 @@ EventName = log.OnroadEvent.EventName
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS:
-  def __init__(self):
+  # 注意力衰减时间倍数，1=原始，3=3倍时间（告警更慢）
+  _AWARENESS_TIME_MULTIPLIER = 3.0
+
+  def __init__(self, time_multiplier=None):
     self._DT_DMON = DT_DMON
+    mult = time_multiplier if time_multiplier is not None else self._AWARENESS_TIME_MULTIPLIER
     # ref (page15-16): https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:42018X1947&rid=2
-    self._AWARENESS_TIME = 30. # passive wheeltouch total timeout
-    self._AWARENESS_PRE_TIME_TILL_TERMINAL = 15.
-    self._AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.
-    self._DISTRACTED_TIME = 11. # active monitoring total timeout
-    self._DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
-    self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
+    self._AWARENESS_TIME = 30. * mult  # passive wheeltouch total timeout
+    self._AWARENESS_PRE_TIME_TILL_TERMINAL = 15. * mult
+    self._AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6. * mult
+    self._DISTRACTED_TIME = 11. * mult  # active monitoring total timeout
+    self._DISTRACTED_PRE_TIME_TILL_TERMINAL = 8. * mult
+    self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6. * mult
 
     self._FACE_THRESHOLD = 0.7
     self._EYE_THRESHOLD = 0.65
@@ -75,7 +79,7 @@ class DRIVER_MONITOR_SETTINGS:
     self._RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
 
     self._MAX_TERMINAL_ALERTS = 3  # not allowed to engage after 3 terminal alerts
-    self._MAX_TERMINAL_DURATION = int(30 / self._DT_DMON)  # not allowed to engage after 30s of terminal alerts
+    self._MAX_TERMINAL_DURATION = int(30 * mult / self._DT_DMON)  # not allowed to engage after 30s*mult of terminal alerts
 
 class DistractedType:
 
@@ -138,9 +142,9 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
 
 
 class DriverMonitoring:
-  def __init__(self, rhd_saved=False, settings=None, always_on=False):
+  def __init__(self, rhd_saved=False, settings=None, always_on=False, time_multiplier=None):
     if settings is None:
-      settings = DRIVER_MONITOR_SETTINGS()
+      settings = DRIVER_MONITOR_SETTINGS(time_multiplier=time_multiplier)
     # init policy settings
     self.settings = settings
 

@@ -3,6 +3,7 @@ import fcntl
 import os
 import queue
 import struct
+import subprocess
 import threading
 import time
 from collections import OrderedDict, namedtuple
@@ -336,7 +337,13 @@ def hardware_thread(end_event, hw_queue) -> None:
     if C3:
       if not os.path.isfile("/persist/comma/living-in-the-moment"):
         if not Path("/data/media").is_mount():
-          set_offroad_alert_if_changed("Offroad_StorageMissing", True)
+          # Try to mount NVMe (e.g. after reboot when fstab cannot be used on AGNOS)
+          if os.path.exists("/dev/nvme0n1"):
+            subprocess.run(["sudo", "mount", "/dev/nvme0n1", "/data/media"], timeout=10)
+          if not Path("/data/media").is_mount():
+            set_offroad_alert_if_changed("Offroad_StorageMissing", True)
+        else:
+          set_offroad_alert_if_changed("Offroad_StorageMissing", False)
 
     # Handle offroad/onroad transition
     should_start = all(onroad_conditions.values())

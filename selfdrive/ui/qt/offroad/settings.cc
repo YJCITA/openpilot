@@ -55,6 +55,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       false,
     },
     {
+      "DriverMonitoringEnabled",
+      tr("Driver Monitoring"),
+      tr("Enable driver monitoring model and alerts. When off, no distraction detection or alerts."),
+      "../assets/icons/monitoring.png",
+      true,
+    },
+    {
       "RecordFront",
       tr("Record and Upload Driver Camera"),
       tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
@@ -86,6 +93,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
                                           "../assets/icons/speed_limit.png",
                                           longi_button_texts);
 
+  std::vector<QString> dm_multiplier_texts{tr("1x"), tr("2x"), tr("3x")};
+  dm_time_multiplier_setting = new ButtonParamControl("DriverMonitoringTimeMultiplierIndex", tr("Driver Monitoring Alert Sensitivity"),
+                                          tr("Adjust awareness decay time. Higher = slower alerts (more tolerant). 1x = original, 3x = 3x longer."),
+                                          "../assets/icons/monitoring.png",
+                                          dm_multiplier_texts);
+
   // set up uiState update for personality setting
   QObject::connect(uiState(), &UIState::uiUpdate, this, &TogglesPanel::updateState);
 
@@ -113,6 +126,10 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     // insert longitudinal personality after NDOG toggle
     if (param == "DisengageOnAccelerator") {
       addItem(long_personality_setting);
+    }
+    // insert DM time multiplier after DriverMonitoringEnabled
+    if (param == "DriverMonitoringEnabled") {
+      addItem(dm_time_multiplier_setting);
     }
   }
 

@@ -1,5 +1,6 @@
 #include "system/loggerd/logger.h"
 
+#include <ctime>
 #include <fstream>
 #include <map>
 #include <vector>
@@ -95,12 +96,13 @@ kj::Array<capnp::word> logger_build_init_data() {
   return capnp::messageToFlatArray(msg);
 }
 
-// -YJ-
+// -YJ- Route name in Beijing time (UTC+8)
 std::string logger_get_route_name() {
   char route_name[64] = {'\0'};
   time_t rawtime = time(NULL);
+  rawtime += 8 * 3600;  // UTC+8 -> Beijing time
   struct tm timeinfo;
-  localtime_r(&rawtime, &timeinfo);
+  gmtime_r(&rawtime, &timeinfo);
   strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
   return route_name;
 }
