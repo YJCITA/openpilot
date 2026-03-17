@@ -95,6 +95,19 @@ kj::Array<capnp::word> logger_build_init_data() {
   return capnp::messageToFlatArray(msg);
 }
 
+// -YJ-
+std::string logger_get_route_name() {
+  char route_name[64] = {'\0'};
+  // Get UTC time and convert to Beijing Time (UTC+8)
+  time_t rawtime = time(NULL);
+  rawtime += 8 * 3600;  // Add 8 hours for Beijing Time
+  struct tm timeinfo;
+  gmtime_r(&rawtime, &timeinfo);  // Use gmtime_r since we already added offset
+  strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
+  return route_name;
+}
+
+
 std::string logger_get_identifier(std::string key) {
   // a log identifier is a 32 bit counter, plus a 10 character unique ID.
   // e.g. 000001a3--c20ba54385
@@ -164,7 +177,9 @@ static void log_sentinel(LoggerState *log, SentinelType type, int exit_signal = 
 }
 
 LoggerState::LoggerState(const std::string &log_root) {
-  route_name = logger_get_identifier("RouteCount");
+  // -YJ-
+  //route_name = logger_get_identifier("RouteCount");
+  route_name = logger_get_route_name();
   route_path = log_root + "/" + route_name;
   init_data = logger_build_init_data();
 }

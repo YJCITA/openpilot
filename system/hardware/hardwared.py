@@ -327,7 +327,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     # - TIZI, or
     # - TICI and channel_type is "tici"
     build_metadata = get_build_metadata()
-    is_unsupported_combo = TICI and HARDWARE.get_device_type() == "tici" and build_metadata.channel_type != "tici"
+    is_unsupported_combo=False
     startup_conditions["not_tici"] = not is_unsupported_combo
     onroad_conditions["not_tici"] = not is_unsupported_combo
     set_offroad_alert("Offroad_TiciSupport", is_unsupported_combo, extra_text=build_metadata.channel)
@@ -381,8 +381,15 @@ def hardware_thread(end_event, hw_queue) -> None:
         startup_blocked_ts = time.monotonic()
 
       started_ts = None
-      if off_ts is None:
-        off_ts = time.monotonic()
+      # -YJ-
+      # if off_ts is None:
+      #   off_ts = time.monotonic()
+      # 只有在点火关闭时才设置 off_ts
+      if not onroad_conditions["ignition"]:
+          if off_ts is None:
+              off_ts = time.monotonic()
+      else:
+          off_ts = None  # 点火开启时不计时
 
     # Offroad power monitoring
     voltage = None if peripheralState.pandaType == log.PandaState.PandaType.unknown else peripheralState.voltage

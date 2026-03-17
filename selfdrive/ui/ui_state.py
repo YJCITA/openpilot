@@ -295,7 +295,15 @@ class Device(DeviceSP):
         callback()
     self._prev_timed_out = interaction_timeout
 
-    self._set_awake(ui_state.ignition or not interaction_timeout or PC)
+    # Offroad mode behavior:
+    # - When OffroadMode is true, only stay awake while not timed out (or on PC).
+    # - Otherwise, stay awake while ignition is on or not timed out (or on PC).
+    offroad_mode = ui_state.params.get_bool("OffroadMode")
+    if offroad_mode:
+      awake = (not interaction_timeout) or PC
+    else:
+      awake = ui_state.ignition or (not interaction_timeout) or PC
+    self._set_awake(awake)
 
   def _set_awake(self, on: bool):
     if on != self._awake:
