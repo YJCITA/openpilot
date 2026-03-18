@@ -80,7 +80,7 @@ Pipfile
 
 ### VisualStudioCode ###
 .vscode/*
-!.vscode/settings.json
+# !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
@@ -103,6 +103,8 @@ PLAN.md
 TASK.md
 CLAUDE.md
 SKILL.md
+AGENTS.md
+.ai
 
 ### JetBrains ###
 !.idea/customTargets.xml
