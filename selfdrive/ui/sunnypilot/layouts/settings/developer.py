@@ -6,6 +6,8 @@ See the LICENSE.md file in the root directory for more details.
 """
 import datetime
 import os
+import shutil
+import threading
 from pathlib import Path
 
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -18,8 +20,9 @@ from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.list_view import button_item
 
+from openpilot.system.ui.sunnypilot.lib.utils import NoElideButtonAction
 from openpilot.system.ui.sunnypilot.widgets.html_render import HtmlModalSP
-from openpilot.system.ui.sunnypilot.widgets.list_view import toggle_item_sp
+from openpilot.system.ui.sunnypilot.widgets.list_view import ListItemSP, toggle_item_sp
 
 PREBUILT_PATH = os.path.join(Paths.comma_home(), "prebuilt") if PC else "/data/openpilot/prebuilt"
 
@@ -28,12 +31,16 @@ class DeveloperLayoutSP(DeveloperLayout):
   def __init__(self):
     super().__init__()
     self.error_log_path = os.path.join(Paths.crash_log_root(), "error.log")
+    self.realdata_path = Path(Paths.log_root())
+    self._realdata_delete_in_progress = False
     self._is_release_branch: bool = self._is_release or ui_state.params.get_bool("IsReleaseSpBranch")
     self._is_development_branch: bool = ui_state.params.get_bool("IsTestedBranch") or ui_state.params.get_bool("IsDevelopmentBranch")
     self._initialize_items()
 
     for item in self.items:
       self._scroller.add_widget(item)
+
+    self._update_realdata_size()
 
   def _initialize_items(self):
     self.show_advanced_controls = toggle_item_sp(tr("Show Advanced Controls"),
@@ -49,10 +56,39 @@ class DeveloperLayoutSP(DeveloperLayout):
                                                      "Requires you to connect to your comma locally via its IP address."), param="EnableCopyparty")
 
     self.prebuilt_toggle = toggle_item_sp(tr("Quickboot Mode"), "", param="QuickBootToggle", callback=self._on_prebuilt_toggled)
+    self.prebuilt_toggle.callback = None
+    self.loggerd_recording_toggle = toggle_item_sp(
+      tr("Record loggerd"),
+      lambda: tr("Enable or disable loggerd recording to {}.").format(self.realdata_path),
+      initial_state=not ui_state.params.get_bool("DisableLogging"),
+      callback=self._on_loggerd_recording_toggled,
+      enabled=ui_state.is_offroad,
+    )
+    self.loggerd_recording_toggle.callback = None
+    self.clear_realdata_btn = ListItemSP(
+      title=tr("Recorded Routes"),
+      description=lambda: tr("Delete all files under {}. This cannot be undone.").format(self.realdata_path),
+      action_item=NoElideButtonAction(tr("CLEAR"), enabled=ui_state.is_offroad),
+      callback=self._on_clear_realdata_clicked,
+    )
 
     self.error_log_btn = button_item(tr("Error Log"), tr("VIEW"), tr("View the error log for sunnypilot crashes."), callback=self._on_error_log_clicked)
 
-    self.items: list = [self.show_advanced_controls, self.enable_github_runner_toggle, self.enable_copyparty_toggle, self.prebuilt_toggle, self.error_log_btn,]
+    self.items: list = [
+      self.show_advanced_controls,
+      self.enable_github_runner_toggle,
+      self.enable_copyparty_toggle,
+      self.prebuilt_toggle,
+      self.loggerd_recording_toggle,
+      self.clear_realdata_btn,
+      self.error_log_btn,
+    ]
+
+  @staticmethod
+  def _format_size(total_size: int) -> str:
+    if total_size < 1024 ** 3:
+      return f"{total_size / 1024 ** 2:.2f} MB"
+    return f"{total_size / 1024 ** 3:.2f} GB"
 
   @staticmethod
   def _on_prebuilt_toggled(state):
@@ -84,6 +120,63 @@ class DeveloperLayoutSP(DeveloperLayout):
     dialog = HtmlModalSP(text=text, callback=lambda result: self._on_error_log_closed(result, os.path.exists(self.error_log_path)))
     gui_app.push_widget(dialog)
 
+  def show_event(self):
+    super().show_event()
+    self._update_realdata_size()
+
+  def _on_loggerd_recording_toggled(self, state):
+    ui_state.params.put_bool("DisableLogging", not state)
+
+  def _calculate_realdata_size(self):
+    total_size = 0
+    directories_to_scan = [self.realdata_path] if self.realdata_path.exists() else []
+    while directories_to_scan:
+      try:
+        for entry in os.scandir(directories_to_scan.pop()):
+          if entry.is_file(follow_symlinks=False):
+            total_size += entry.stat(follow_symlinks=False).st_size
+          elif entry.is_dir(follow_symlinks=False):
+            directories_to_scan.append(entry.path)
+      except OSError:
+        pass
+
+    self.clear_realdata_btn.action_item.set_value(self._format_size(total_size))
+
+  def _update_realdata_size(self):
+    threading.Thread(target=self._calculate_realdata_size, daemon=True).start()
+
+  def _delete_realdata_contents(self):
+    try:
+      if self.realdata_path.exists():
+        for entry in os.scandir(self.realdata_path):
+          try:
+            if entry.is_dir(follow_symlinks=False):
+              shutil.rmtree(entry.path)
+            else:
+              os.remove(entry.path)
+          except FileNotFoundError:
+            pass
+    finally:
+      self._realdata_delete_in_progress = False
+      self.clear_realdata_btn.action_item.set_text(tr("CLEAR"))
+      self.clear_realdata_btn.action_item.set_enabled(ui_state.is_offroad())
+      self._update_realdata_size()
+
+  def _on_clear_realdata_confirm(self, result):
+    if result == DialogResult.CONFIRM:
+      self._realdata_delete_in_progress = True
+      self.clear_realdata_btn.action_item.set_enabled(False)
+      self.clear_realdata_btn.action_item.set_text(tr("CLEARING..."))
+      threading.Thread(target=self._delete_realdata_contents, daemon=True).start()
+
+  def _on_clear_realdata_clicked(self):
+    dialog = ConfirmDialog(
+      tr("This will delete ALL recorded routes under {}.\n\nAre you sure you want to continue?").format(self.realdata_path),
+      tr("Clear Recorded Routes"),
+      callback=self._on_clear_realdata_confirm,
+    )
+    gui_app.push_widget(dialog)
+
   def _update_state(self):
     disable_updates = ui_state.params.get_bool("DisableUpdates")
     show_advanced = ui_state.params.get_bool("ShowAdvancedControls")
@@ -103,4 +196,7 @@ class DeveloperLayoutSP(DeveloperLayout):
 
     self.enable_copyparty_toggle.set_visible(show_advanced)
     self.enable_github_runner_toggle.set_visible(show_advanced and not self._is_release_branch)
+    self.loggerd_recording_toggle.action_item.set_enabled(ui_state.is_offroad())
+    self.loggerd_recording_toggle.action_item.set_state(not ui_state.params.get_bool("DisableLogging"))
+    self.clear_realdata_btn.action_item.set_enabled(ui_state.is_offroad() and not self._realdata_delete_in_progress)
     self.error_log_btn.set_visible(not self._is_release_branch)

@@ -16,14 +16,17 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
+from openpilot.system.trip.tripdb import load_trip_stats
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.sunnypilot.widgets.list_view import toggle_item_sp
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
 
 class TripsLayout(Widget):
   PARAM_KEY = "ApiCache_DriveStats"
+  LOCAL_SOURCE_PARAM = "TripsUseLocalData"
   UPDATE_INTERVAL = 30  # seconds
 
   def __init__(self):
@@ -31,10 +34,17 @@ class TripsLayout(Widget):
     self._params = Params()
     self._session = requests.Session()
     self._stats = self._get_stats()
+    self._local_stats = self._get_local_stats()
 
     self._icon_distance = gui_app.texture("icons/road.png", 100, 100, keep_aspect_ratio=True)
     self._icon_drives = gui_app.texture("icons_mici/wheel.png", 80, 80, keep_aspect_ratio=True)
     self._icon_hours = gui_app.texture("../../sunnypilot/selfdrive/assets/icons/clock.png", 80, 80, keep_aspect_ratio=True)
+    self._source_toggle = toggle_item_sp(
+      title=lambda: tr("Use Local Trip Data"),
+      description=lambda: tr("Off: remote trip stats. On: local trip stats."),
+      param=self.LOCAL_SOURCE_PARAM,
+    )
+    self._source_toggle.set_right_value(self._get_source_preference_label)
 
     self._running = True
     self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
@@ -48,6 +58,12 @@ class TripsLayout(Widget):
     except Exception:
       pass
 
+  def show_event(self):
+    super().show_event()
+    self._stats = self._get_stats()
+    self._local_stats = self._get_local_stats()
+    self._source_toggle.show_event()
+
   def _get_stats(self):
     stats = self._params.get(self.PARAM_KEY)
     if not stats:
@@ -57,6 +73,48 @@ class TripsLayout(Widget):
     except Exception:
       cloudlog.exception(f"Failed to decode drive stats: {stats}")
       return {}
+
+  def _get_local_stats(self):
+    try:
+      return load_trip_stats()
+    except Exception:
+      cloudlog.exception("Failed to read local trip stats")
+      return {}
+
+  @staticmethod
+  def _has_trip_data(stats):
+    if not isinstance(stats, dict):
+      return False
+
+    for period in ("all", "week"):
+      data = stats.get(period, {})
+      if not isinstance(data, dict):
+        continue
+
+      if int(data.get("routes", 0)) > 0:
+        return True
+      if float(data.get("distance", 0)) > 0:
+        return True
+      if float(data.get("minutes", 0)) > 0:
+        return True
+
+    return False
+
+  def _prefer_local_data(self):
+    return self._params.get_bool(self.LOCAL_SOURCE_PARAM)
+
+  def _get_source_preference_label(self):
+    return tr("Local") if self._prefer_local_data() else tr("Remote")
+
+  def _get_display_stats(self):
+    primary_stats = self._local_stats if self._prefer_local_data() else self._stats
+    secondary_stats = self._stats if self._prefer_local_data() else self._local_stats
+
+    if self._has_trip_data(primary_stats):
+      return primary_stats
+    if self._has_trip_data(secondary_stats):
+      return secondary_stats
+    return primary_stats if primary_stats else secondary_stats
 
   def _fetch_drive_stats(self):
     try:
@@ -72,10 +130,15 @@ class TripsLayout(Widget):
     except Exception as e:
       cloudlog.error(f"Failed to fetch drive stats: {e}")
 
+  def _update_state(self):
+    super()._update_state()
+    self._source_toggle.action_item.set_state(self._prefer_local_data())
+
   def _update_loop(self):
     while self._running:
       if not ui_state.started and device._awake:
         self._fetch_drive_stats()
+        self._local_stats = self._get_local_stats()
       time.sleep(self.UPDATE_INTERVAL)
 
   def _render_stat_group(self, x, y, width, height, title, data, is_metric):
@@ -135,14 +198,23 @@ class TripsLayout(Widget):
     y = rect.y
     w = rect.width
 
+    source_toggle_height = self._source_toggle.rect.height
+    source_toggle_spacing = 20
+    bottom_padding = 30
+    source_toggle_rect = rl.Rectangle(x, y, w, source_toggle_height)
+    self._source_toggle.set_parent_rect(source_toggle_rect)
+    self._source_toggle.render(source_toggle_rect)
+    y += source_toggle_height + source_toggle_spacing
+
     spacing = 30
-    available_h = rect.height - 30
+    available_h = rect.height - (y - rect.y) - bottom_padding
     card_height = available_h / 2
 
     is_metric = self._params.get_bool("IsMetric")
+    stats = self._get_display_stats()
 
-    all_time = self._stats.get("all", {})
-    week = self._stats.get("week", {})
+    all_time = stats.get("all", {})
+    week = stats.get("week", {})
 
     y = self._render_stat_group(x, y, w, card_height, tr("ALL TIME"), all_time, is_metric)
     y += spacing
