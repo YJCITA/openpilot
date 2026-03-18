@@ -1,85 +1,490 @@
 {
-  "version": "0.2.0",
-  "inputs": [
-    {
-      "id": "python_process",
-      "type": "pickString",
-      "description": "Select the process to debug",
-      "options": [
-        "selfdrive/controls/controlsd.py",
-        "system/timed/timed.py",
-        "tools/sim/run_bridge.py"
-      ]
-    },
-    {
-      "id": "cpp_process",
-      "type": "pickString",
-      "description": "Select the process to debug",
-      "options": [
-        "selfdrive/ui/ui"
-      ]
-    },
-    {
-      "id": "args",
-      "description": "Arguments to pass to the process",
-      "type": "promptString"
-    },
-    {
-      "id": "replayArg",
-      "type": "promptString",
-      "description": "Enter route or segment to replay."
-    }
-  ],
-  "configurations": [
-    {
-      "name": "Python: openpilot Process",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${input:python_process}",
-      "console": "integratedTerminal",
-      "justMyCode": true,
-      "args": "${input:args}"
-    },
-    {
-      "name": "C++: openpilot Process",
-      "type": "cppdbg",
-      "request": "launch",
-      "program": "${workspaceFolder}/${input:cpp_process}",
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "name": "Attach LLDB to Replay drive",
-      "type": "lldb",
-      "request": "attach",
-      "pid": "${command:pickMyProcess}",
-      "initCommands": [
-        "script import time; time.sleep(3)"
-      ]
-    },
-    {
-      "name": "Replay drive",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${workspaceFolder}/opendbc/safety/tests/safety_replay/replay_drive.py",
-      "args": [
-        "${input:replayArg}"
-      ],
-      "console": "integratedTerminal",
-      "justMyCode": false,
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
+    // 使用 IntelliSense 了解相关属性。
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "selfdrived",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/selfdrive/selfdrived",
+            "program": "./selfdrived.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "SKIP_FW_QUERY": "1",
+                "FINGERPRINT": "TESLA_MODEL_Y",
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+            "args": [
+                // "-bin=/home/yj/bak/data/EP40/EP40_70/20220827_EP70_fusion_usbcamera_深南大道/20220827135423/mdc.1",
+            ]
+        },
+        {
+          "name": "controlsd",
+          "type": "python",
+          "launch":"python3",
+          "request": "launch",
+          "cwd": "${workspaceFolder}/selfdrive/controls",
+          "program": "./controlsd.py",
+          "console": "integratedTerminal",
+          "justMyCode": true,
+          "env": {
+              "SKIP_FW_QUERY": "1",
+              "FINGERPRINT": "TESLA_MODEL_Y",
+              "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+          },
+          "args": [
+              // "-bin=/home/yj/bak/data/EP40/EP40_70/20220827_EP70_fusion_usbcamera_深南大道/20220827135423/mdc.1",
+          ],
+          // "preLaunchTask": "pre_controlsd"
       },
-      "subProcess": true,
-      "stopOnEntry": false
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Replay drive + Safety LLDB",
-      "configurations": [
-        "Replay drive",
-        "Attach LLDB to Replay drive"
-      ]
-    }
-  ]
-}
+        {
+          "name": "card",
+          "type": "python",
+          "launch":"python3",
+          "request": "launch",
+          "cwd": "${workspaceFolder}/selfdrive/car",
+          "program": "./card.py",
+          "console": "integratedTerminal",
+          "justMyCode": true,
+          "env": {
+              "SKIP_FW_QUERY": "1",
+              "FINGERPRINT": "TESLA_MODEL_Y",
+              "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+          },
+          "args": [
+              // "-bin=/home/yj/bak/data/EP40/EP40_70/20220827_EP70_fusion_usbcamera_深南大道/20220827135423/mdc.1",
+          ]
+      },
+
+        {
+            "name": "plannerd",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/selfdrive/controls",
+            "program": "./plannerd.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "SKIP_FW_QUERY": "1",
+                "FINGERPRINT": "NETA_L_ARS513",
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+            "args": [
+                // "-bin=/home/yj/bak/data/EP40/EP40_70/20220827_EP70_fusion_usbcamera_深南大道/20220827135423/mdc.1",
+            ]
+        },
+        {
+          "name": "plannerd_fp_process",
+          "type": "python",
+          "launch":"python3",
+          "request": "launch",
+          "cwd": "${workspaceFolder}/selfdrive/frogpilot",
+          "program": "./frogpilot_process.py",
+          "console": "integratedTerminal",
+          "justMyCode": true,
+          "env": {
+              "SKIP_FW_QUERY": "1",
+              "FINGERPRINT": "NETA_L_ARS513",
+              "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+          },
+          "args": [
+              // "-bin=/home/yj/bak/data/EP40/EP40_70/20220827_EP70_fusion_usbcamera_深南大道/20220827135423/mdc.1",
+          ]
+      },
+        {
+            "name": "modeld",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/selfdrive/modeld",
+            "program": "./modeld.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "SKIP_FW_QUERY": "1",
+                "FINGERPRINT": "NETA_L_ARS513",
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+            "args": [
+                // "-bin=/home/yj/bak/data/EP40/EP40_70/20220827_EP70_fusion_usbcamera_深南大道/20220827135423/mdc.1",
+            ]
+        },
+        {
+            "name": "radar",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/selfdrive/controls",
+            "program": "./radard.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "SKIP_FW_QUERY": "1",
+              //   "FINGERPRINT": "NETA L CH",
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+            "args": [
+                "PC"
+                // "-bin=/home/yj/bak/data/EP40/EP40_70/20220827_EP70_fusion_usbcamera_深南大道/20220827135423/mdc.1",
+            ]
+        },
+        {
+            "name": "run_bridge",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/sim",
+            "program": "./run_bridge.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                // export PYTHONPATH="$HOME/openpilot_dev":$PYTHONPATH
+                // 关键的部分是"env"字段，它设置了PYTHONPATH环境变量
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}"
+            },
+            "args": [
+                "--simulator", "metadrive"
+            ]
+        },
+        {
+            "name": "launch_op",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/sim",
+            "program": "./run_bridge.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":  {
+                        "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}"
+                    },
+            "args": [
+                // "--simulator", "metadrive"
+                // ./tools/sim/launch_sh
+            ]
+        },
+        {
+              "name": "plotjuggle_raw",
+              "type": "python",
+              "launch":"python3",
+              "request": "launch",
+              "cwd": "${workspaceFolder}/tools/plotjuggler/",
+              "program": "./juggle.py",
+              "console": "integratedTerminal",
+              "justMyCode": true,
+              "env": {
+                  "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+              },
+
+              "args": [
+                  "8b67b428fd9fea5c/00000047--d04a4d7f8a",
+                  // "--demo"
+                  // "--ci"
+                    // "--layout", "/home/yj/op/frogpilot_byd/tools/plotjuggler_yj/layouts/dev/lcc_pid.xml",
+                    //   "--layout", "/home/yj/openpilot/tools/plotjuggler_yj/layouts/dev/desired_curvature_with_speed.xml",
+              ]
+          },
+        {
+            "name": "plotjuggle_py",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/plotjuggler_yj/",
+            "program": "./juggle.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+
+            "args": [
+
+                  "/home/yj/bak/data/comma_data/tesla/20251108_弯道减速/2025-11-17--14-36-20--0",
+
+                  "--segment_count", "1",
+                  "--dbc", "/home/yj/op/sunnypilot_tesla/opendbc/dbc/tesla_model3_party.dbc",
+                  "--layout", "/home/yj/op/sunnypilot_tesla/tools/plotjuggler_yj/layout/dev/acc.xml",
+                  "--can"
+                  // "--layout", "/home/yj/op/frogpilot_byd/tools/plotjuggler_yj/layouts/dev/lcc_pid.xml",
+                  //   "--layout", "/home/yj/openpilot/tools/plotjuggler_yj/layouts/dev/desired_curvature_with_speed.xml",
+            ]
+        },
+        {
+            "name": "plotjuggle_live_c3_yj",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/plotjuggler_yj/",
+            "program": "./juggle.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+                "ZMQ": "1",
+            },
+
+            "args": [
+                  "--stream",
+                //   "--layout", "/home/yj/op/openpilot_master/tools/plotjuggler_yj/layout/l2_can_4_6_compare.xml",
+
+                   "--dbc", "/Users/yj/Desktop/src/sunnypilot_tesla/opendbc/dbc/tesla_model3_party_yj.dbc",
+                  // "--layout", "/home/yj/frogpilot/tools/plotjuggler_yj/layouts/dev/lcc_state.xml",
+                  //   "--layout", "/home/yj/openpilot/tools/plotjuggler_yj/layouts/dev/desired_curvature_with_speed.xml",
+            ]
+        },
+        {
+          "name": "plotjuggle_live_c3",
+          "type": "python",
+          "launch":"python3",
+          "request": "launch",
+          "cwd": "${workspaceFolder}/tools/plotjuggler/",
+          "program": "./juggle.py",
+          "console": "integratedTerminal",
+          "justMyCode": true,
+          "env": {
+              "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+              "ZMQ": "1",
+          },
+
+          "args": [
+            "--stream",
+            //   "--layout", "/home/yj/op/openpilot_master/tools/plotjuggler_yj/layout/l2_can_4_6_compare.xml",
+
+               "--dbc", "/home/yj/op/sunnypilot_tesla_tools/opendbc/dbc/tesla_model3_party.dbc",
+              // "--layout", "/home/yj/frogpilot/tools/plotjuggler_yj/layouts/dev/lcc_state.xml",
+          ]
+      },
+        {
+          "name": "plotjuggle_live_pc",
+          "type": "python",
+          "launch":"python3",
+          "request": "launch",
+          "cwd": "${workspaceFolder}/tools/plotjuggler_yj/",
+          "program": "./juggle.py",
+          "console": "integratedTerminal",
+          "justMyCode": true,
+          "env": {
+              "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+          },
+          "args": [
+           // 板子上运行  ./cereal/messaging/bridge
+                "--stream",
+                // "--layout", "/home/yj/frogpilot/tools/plotjuggler_yj/layouts/dev/acc_speed_analyze.xml",
+                "--layout", "/home/yj/frogpilot/tools/plotjuggler_yj/layouts/dev/lcc_state.xml",
+                //   "--layout", "/home/yj/openpilot/tools/plotjuggler_yj/layouts/dev/desired_curvature_with_speed.xml",
+          ]
+        },
+        {
+            "name": "logreader",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/lib/",
+            "program": "./logreader_yj.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+
+            "args": [
+                // "--demo",
+                // "--qlog",
+                // "--layout=layouts/demo.xml",
+                // "/home/yj/bak/data/comma_data/EP40/PC/v0.9.5/2aef53e13714ee01|2023-11-22--20-30-20--2"
+                // "/home/yj/2aef53e13714ee01|2024-03-19--15-31-13"
+                // "/home/yj/2024-03-19--15-31-13--0/qlog"
+                "/home/yj/bak/data/comma_data/c3_canfd_from_ma/2023-08-02--20-57-39--8/qlog"
+                // "--layout","layouts/CAN-bus-debug.xml",
+            ]
+        },
+        {
+            "name": "cabana_no_run",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/cabana/",
+            "program": "${workspaceFolder}/tools/cabana/cabana",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                // "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+
+            "args": [
+              // 得用 op_dev   fp的运行会报错
+                // "--demo",
+              //   "--route","2aef53e13714ee01|2023-11-22--05-52-52--5",
+              //   "--data_dir", "/home/yj/bak/data/comma_data/EP32/20240506_EP32_N29_fp_097_OK",
+            ]
+        },
+        {
+            "name": "ui_yj",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/replay",
+            "program": "./ui_yj.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+            "args": [
+                // "--demo",
+                // "--qlog",
+                // "--layout=layouts/demo.xml",
+                // "/home/yj/bak/data/comma_data/EP40/PC/v0.9.5/2aef53e13714ee01|2023-11-22--20-30-20--2"
+                // "--data_dir",
+                // "/home/yj/bak/data/comma_data/EP40/20240116 2aef53e13714ee01|2024-01-16--17-03-45--1"
+                // "--route-name","2aef53e13714ee01|2024-02-01--18-01-48",
+                // "--data_dir", "/home/yj/bak/data/comma_data/EP40/20240201_地库测试_不能控车",
+            ]
+        },
+        {
+            "name": "ui",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/selfdrive/ui/",
+            "program": "${workspaceFolder}/selfdrive/ui/ui",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "SKIP_FW_QUERY": "1",
+              //   "FINGERPRINT": "NETA L CH",
+                "LD_LIBRARY_PATH": "/home/yj/src/comma/ui_lib/bin::${LD_LIBRARY_PATH}",
+            },
+        },
+        {
+              "name": "hil",
+              "type": "python",
+              "launch":"python3",
+              "request": "launch",
+              "cwd": "${workspaceFolder}/tools/replay",
+              "program": "./hil.py",
+              "console": "integratedTerminal",
+              "justMyCode": true,
+              "env": {
+                  "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+              },
+              "args": [
+                  // "--demo",
+                  // "--qlog",
+                  // "--layout=layouts/demo.xml",
+                  // "/home/yj/bak/data/comma_data/EP40/PC/v0.9.5/2aef53e13714ee01|2023-11-22--20-30-20--2"
+                  // "--data_dir",
+                  // "/home/yj/bak/data/comma_data/EP40/20240116 2aef53e13714ee01|2024-01-16--17-03-45--1"
+                  // "--route-name","2aef53e13714ee01|2024-02-01--18-01-48",
+                  // "--data_dir", "/home/yj/bak/data/comma_data/EP40/20240201_地库测试_不能控车",
+              ]
+          },
+        {
+            "name": "can_replay",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/replay",
+            "program": "./can_replay.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+            "args": [
+                // ACC
+                // "/home/yj/bak/data/comma_data/tesla/20250826_break_data/road/2025-07-02--14-05-19--7/rlog.zst"
+
+                // l2 engage
+                "/home/yj/bak/data/comma_data/tesla/20251128_sp_coor_curve/2025-07-02--14-06-40--4/rlog.zst"
+                // "/home/yj/bak/data/comma_data/A1J_LX/PC/2aef53e13714ee01|2023-02-06--17-09-03--0"
+            ]
+        },
+        {
+            "name": "jungle_test",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/panda/board/jungle/scripts",
+            "program": "./panda_identification_test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+            "args": [
+              //   "--route_or_segment_name",
+                // "/home/yj/bak/data/comma_data/ID3/real_data/20250308/2024-03-30--11-03-23--0/rlog"
+                // "/home/yj/bak/data/comma_data/A1J_LX/PC/2aef53e13714ee01|2023-02-06--17-09-03--0"
+            ]
+        },
+        {
+            "name": "camera",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/webcam",
+            "program": "camerad.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+                // # export the block below when call manager.py
+                "BLOCK":"${BLOCK},camerad",
+                "USE_WEBCAM":"1",
+
+                // # Change camera index according to your setting
+                "CAMERA_ROAD_ID":"0",
+                // "CAMERA_DRIVER_ID":"1",
+                // "DUAL_CAMERA":"2"  //# camera index for wide road camera
+            },
+            "args": [
+                // "--route_or_segment_name",
+                // "/home/yj/bak/data/comma_data/EP32/20240330_EP32_095_ok/2aef53e13714ee01|2024-03-30--11-03-23--0"
+                // "/home/yj/bak/data/comma_data/A1J_LX/PC/2aef53e13714ee01|2023-02-06--17-09-03--0"
+            ]
+        },
+        {
+          "name": "clip_video_complete_example",
+          "type": "python",
+          "request": "launch",
+          "cwd": "${workspaceFolder}",
+          "program": "./tools/clip/run_yj.py",
+          "console": "integratedTerminal",
+          "justMyCode": true,
+          "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+            },
+          "args": [
+            // 必选：路线名称（dongle_id|timestamp 或 dongle_id/timestamp）
+            "2aef53e13714ee01/2025-10-13--13-18-29",
+
+            // 数据目录：本地路线数据存储位置
+            "-d", "/home/yj/bak/data/comma_data/tesla/20251013_sp_master_c3l_居中不正常/",
+
+            // 时间范围：开始和结束时间（秒）  不传就是从开始到结束
+            // "-s", "2",      // 开始时间
+            // "-e", "700",     // 结束时间
+
+            // 视频质量：low=qcam, high=hevc（默认high）
+            "-q", "balanced",
+
+            // // 质量预设：fast/balanced/high（影响编码速度和质量）
+            // "--quality-preset", "balanced",
+
+
+            // 播放速度：倍数（默认1，可设置2、3等加速）
+            // "-x", "2",
+
+            // 视频标题：叠加在视频上（可选）
+            // "-t", "Tesla Model 3 - Lane Centering Test",
+
+            // 前缀：临时文件前缀（可选）
+            // "-p", "my_clip_001",
+          ]
+        }
+    ]
+  }

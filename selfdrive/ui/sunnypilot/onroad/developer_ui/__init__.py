@@ -12,7 +12,8 @@ from openpilot.selfdrive.ui.sunnypilot.onroad.developer_ui.elements import (
   UiElement, RelDistElement, RelSpeedElement, SteeringAngleElement,
   DesiredLateralAccelElement, ActualLateralAccelElement, DesiredSteeringAngleElement,
   AEgoElement, LeadSpeedElement, FrictionCoefficientElement, LatAccelFactorElement,
-  SteeringTorqueEpsElement, BearingDegElement, AltitudeElement, DesiredSteeringPIDElement
+  SteeringTorqueEpsElement, BearingDegElement, AltitudeElement, DesiredSteeringPIDElement,
+  StorageElement, MemoryUsageElement, CpuTempMaxElement, CpuBusyElement
 )
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -49,7 +50,11 @@ class DeveloperUiRenderer(Widget):
     self.a_ego_elem = AEgoElement()
     self.lead_speed_elem = LeadSpeedElement()
     self.friction_elem = FrictionCoefficientElement()
+    self.storage_elem = StorageElement()
+    self.memory_elem = MemoryUsageElement()
     self.lat_accel_factor_elem = LatAccelFactorElement()
+    self.cpu_busy_elem = CpuBusyElement()
+    self.cpu_temp_max_elem = CpuTempMaxElement()
     self.steering_torque_elem = SteeringTorqueEpsElement()
     self.bearing_elem = BearingDegElement()
     self.altitude_elem = AltitudeElement()
@@ -135,9 +140,13 @@ class DeveloperUiRenderer(Widget):
                       rl.Color(0, 0, 0, 100))
 
     elements = [
-      self.rel_dist_elem.update(sm, ui_state.is_metric),
-      self.lead_speed_elem.update(sm, ui_state.is_metric),
-      self.a_ego_elem.update(sm, ui_state.is_metric),
+      #self.a_ego_elem.update(sm, ui_state.is_metric),
+      #self.lead_speed_elem.update(sm, ui_state.is_metric),
+      # self.rel_dist_elem.update(sm, ui_state.is_metric),
+      self.cpu_busy_elem.update(sm, ui_state.is_metric),
+      self.memory_elem.update(sm, ui_state.is_metric),
+      self.storage_elem.update(sm, ui_state.is_metric),
+      self.cpu_temp_max_elem.update(sm, ui_state.is_metric),
     ]
 
     # Add torque-specific elements if using torque control

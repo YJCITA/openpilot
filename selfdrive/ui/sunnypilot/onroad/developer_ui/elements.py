@@ -255,6 +255,48 @@ class FrictionCoefficientElement:
     value = f"{friction_coef:.3f}"
     color = rl.Color(0, 255, 0, 255) if live_valid else rl.WHITE
     return UiElement(value, "FRIC.", self.unit, color)
+class StorageElement:
+  def __init__(self):
+    self.unit = "%"
+
+  def update(self, sm, is_metric: bool) -> UiElement:
+    if not sm.valid['deviceState']:
+      return UiElement("-", "StorageFree", self.unit, rl.WHITE)
+
+    free_percent = float(sm['deviceState'].freeSpacePercent)
+    value = f"{int(round(free_percent))}"
+
+    # color based on remaining storage
+    if free_percent <= 2.0:
+      color = rl.RED
+    elif free_percent < 10.0:
+      color = rl.Color(255, 188, 0, 200)
+    else:
+      color = rl.Color(0, 255, 0, 200)
+
+    return UiElement(value, "StorageFree", self.unit, color)
+
+
+class MemoryUsageElement:
+  def __init__(self):
+    self.unit = "%"
+
+  def update(self, sm, is_metric: bool) -> UiElement:
+    if not sm.valid['deviceState']:
+      return UiElement("-", "MemoryUse", self.unit, rl.WHITE)
+
+    mem_percent = int(round(sm['deviceState'].memoryUsagePercent))
+    value = f"{mem_percent}"
+
+    # color: higher memory usage -> more severe
+    if mem_percent >= 95:
+      color = rl.RED
+    elif mem_percent >= 85:
+      color = rl.Color(255, 188, 0, 200)
+    else:
+      color = rl.Color(0, 255, 0, 200)
+
+    return UiElement(value, "MemoryUse", self.unit, color)
 
 
 class LatAccelFactorElement:
@@ -269,6 +311,54 @@ class LatAccelFactorElement:
     value = f"{lat_accel_factor:.3f}"
     color = rl.Color(0, 255, 0, 255) if live_valid else rl.WHITE
     return UiElement(value, "L.A.F.", self.unit, color)
+
+
+class CpuTempMaxElement:
+  def __init__(self):
+    self.unit = "°C"
+
+  def update(self, sm, is_metric: bool) -> UiElement:
+    if not sm.valid['deviceState']:
+      return UiElement("-", "CPU_temp", self.unit, rl.WHITE)
+
+    # cpuTempC is a list (multiple cores), get the maximum temperature
+    cpu_temps = sm['deviceState'].cpuTempC
+    max_cpu_temp = max(cpu_temps) if cpu_temps else 0.0
+    value = f"{max_cpu_temp:.0f}"
+
+    # color based on temperature threshold
+    if max_cpu_temp >= 95:
+      color = rl.RED
+    elif max_cpu_temp >= 85:
+      color = rl.Color(255, 188, 0, 200)
+    elif max_cpu_temp >= 75:
+      color = rl.Color(255, 230, 0, 200)
+    else:
+      color = rl.Color(0, 255, 0, 200)
+
+    return UiElement(value, "CPU_temp", self.unit, color)
+
+
+class CpuBusyElement:
+  def __init__(self):
+    self.unit = "%"
+
+  def update(self, sm, is_metric: bool) -> UiElement:
+    if not sm.valid['deviceState']:
+      return UiElement("-", "CPU_busy", self.unit, rl.WHITE)
+
+    cpu_busy_values = sm['deviceState'].cpuUsagePercent
+    cpu_busy = (sum(cpu_busy_values) / len(cpu_busy_values)) if cpu_busy_values else 0.0
+    value = f"{int(round(cpu_busy))}"
+
+    if cpu_busy >= 95:
+      color = rl.RED
+    elif cpu_busy >= 85:
+      color = rl.Color(255, 188, 0, 200)
+    else:
+      color = rl.Color(0, 255, 0, 200)
+
+    return UiElement(value, "CPU_busy", self.unit, color)
 
 
 class SteeringTorqueEpsElement:
