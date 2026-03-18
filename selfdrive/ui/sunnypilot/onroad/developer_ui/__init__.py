@@ -135,8 +135,9 @@ class DeveloperUiRenderer(Widget):
                       rl.Color(0, 0, 0, 100))
 
     elements = [
-      self.a_ego_elem.update(sm, ui_state.is_metric),
+      self.rel_dist_elem.update(sm, ui_state.is_metric),
       self.lead_speed_elem.update(sm, ui_state.is_metric),
+      self.a_ego_elem.update(sm, ui_state.is_metric),
     ]
 
     # Add torque-specific elements if using torque control

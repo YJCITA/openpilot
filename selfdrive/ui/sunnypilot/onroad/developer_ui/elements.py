@@ -91,7 +91,7 @@ class RelDistElement(LeadInfoElement):
 
   def update(self, sm, is_metric: bool) -> UiElement:
     lead_status, lead_d_rel, _ = self.get_lead_status(sm)
-    value = f"{lead_d_rel:.0f}" if lead_status else "-"
+    value = f"{lead_d_rel:.1f}" if lead_status else "-"
     color = self.get_lead_color(lead_d_rel) if lead_status else rl.WHITE
     return UiElement(value, "REL DIST", self.unit, color)
 
