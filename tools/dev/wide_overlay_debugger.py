@@ -44,6 +44,7 @@ WIDE_LIVE_PATH = (64, 255, 64)
 WIDE_LIVE_LANE = (32, 220, 32)
 WIDE_PROBE_PATH = (255, 180, 0)
 WIDE_PROBE_LANE = (255, 220, 64)
+COMPARE_TILE_W, COMPARE_TILE_H = 640, 360
 
 
 class ProbeMode(Enum):
@@ -533,6 +534,98 @@ def load_calibration_source(path_str: str) -> CalibrationState:
     )
 
 
+def get_warp_matrix_with_camera_rotation(device_from_calib_euler: np.ndarray, intrinsics: np.ndarray,
+                                         bigmodel_frame: bool, camera_from_device_euler: np.ndarray | None = None) -> np.ndarray:
+  from openpilot.common.transformations.model import calib_from_medmodel, calib_from_sbigmodel
+
+  calib_from_model = calib_from_sbigmodel if bigmodel_frame else calib_from_medmodel
+  device_from_calib = rot_from_euler(device_from_calib_euler)
+  camera_from_device = np.eye(3, dtype=np.float32) if camera_from_device_euler is None else rot_from_euler(camera_from_device_euler)
+  camera_from_calib = intrinsics @ view_frame_from_device_frame @ camera_from_device @ device_from_calib
+  return (camera_from_calib @ calib_from_model).astype(np.float32)
+
+
+def warp_bgr_for_compare(image_bgr: np.ndarray, warp_matrix: np.ndarray) -> np.ndarray:
+  from openpilot.common.transformations.model import MEDMODEL_INPUT_SIZE
+  model_w, model_h = MEDMODEL_INPUT_SIZE
+  return cv2.warpPerspective(
+    image_bgr,
+    warp_matrix,
+    (model_w, model_h),
+    flags=cv2.WARP_INVERSE_MAP | cv2.INTER_LINEAR,
+    borderMode=cv2.BORDER_CONSTANT,
+    borderValue=(0, 0, 0),
+  )
+
+
+def compare_resize_letterbox(img: np.ndarray, title: str, subtitle: str | None = None) -> np.ndarray:
+  canvas = np.full((COMPARE_TILE_H, COMPARE_TILE_W, 3), BG, dtype=np.uint8)
+  h, w = img.shape[:2]
+  scale = min((COMPARE_TILE_W - 20) / w, (COMPARE_TILE_H - 50) / h)
+  new_w = max(1, round(w * scale))
+  new_h = max(1, round(h * scale))
+  resized = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+  x0 = (COMPARE_TILE_W - new_w) // 2
+  y0 = 36 + (COMPARE_TILE_H - 36 - new_h) // 2
+  canvas[y0:y0 + new_h, x0:x0 + new_w] = resized
+  cv2.putText(canvas, title, (12, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.65, TEXT, 2, cv2.LINE_AA)
+  if subtitle:
+    cv2.putText(canvas, subtitle, (12, COMPARE_TILE_H - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.5, SUBTEXT, 1, cv2.LINE_AA)
+  return canvas
+
+
+def build_warp_diff_heatmap(current_warp: np.ndarray, proposed_warp: np.ndarray) -> tuple[np.ndarray, dict]:
+  abs_diff = cv2.absdiff(current_warp, proposed_warp)
+  gray = cv2.cvtColor(abs_diff, cv2.COLOR_BGR2GRAY)
+  heat = cv2.applyColorMap(gray, cv2.COLORMAP_TURBO)
+  metrics = {
+    'mean_abs_diff_rgb': abs_diff.mean(axis=(0, 1)).tolist(),
+    'mean_abs_diff_gray': float(gray.mean()),
+    'max_abs_diff_gray': int(gray.max()),
+    'pixels_gt_8': float((gray > 8).mean()),
+    'pixels_gt_16': float((gray > 16).mean()),
+    'pixels_gt_32': float((gray > 32).mean()),
+  }
+  return heat, metrics
+
+
+def render_warp_compare_canvas(sample: Sample, camera: CameraContext, road_bgr: np.ndarray, wide_bgr: np.ndarray,
+                               calib_offset_euler: np.ndarray, wide_offset_euler: np.ndarray) -> tuple[np.ndarray, dict]:
+  adjusted_rpy = compose_euler(sample.calibration.rpy_calib, calib_offset_euler)
+  adjusted_wide = compose_euler(sample.calibration.wide_from_device_euler, wide_offset_euler)
+
+  narrow_warp_matrix = get_warp_matrix_with_camera_rotation(adjusted_rpy, camera.fcam_intrinsics, False, None)
+  wide_current_warp_matrix = get_warp_matrix_with_camera_rotation(adjusted_rpy, camera.ecam_intrinsics, True, None)
+  wide_proposed_warp_matrix = get_warp_matrix_with_camera_rotation(adjusted_rpy, camera.ecam_intrinsics, True, adjusted_wide)
+
+  narrow_warp = warp_bgr_for_compare(road_bgr, narrow_warp_matrix)
+  wide_current_warp = warp_bgr_for_compare(wide_bgr, wide_current_warp_matrix)
+  wide_proposed_warp = warp_bgr_for_compare(wide_bgr, wide_proposed_warp_matrix)
+  diff_heatmap, diff_metrics = build_warp_diff_heatmap(wide_current_warp, wide_proposed_warp)
+
+  top = cv2.hconcat([
+    compare_resize_letterbox(road_bgr, 'Narrow raw', f'frameId/videoIdx: {sample.road_frame_id}/{sample.road_video_idx}'),
+    compare_resize_letterbox(wide_bgr, 'Wide raw', f'frameId/videoIdx: {sample.wide_frame_id}/{sample.wide_video_idx}'),
+    compare_resize_letterbox(narrow_warp, 'Narrow warp (current)', f'rpyCalib deg: {deg_str(adjusted_rpy)}'),
+  ])
+  bottom = cv2.hconcat([
+    compare_resize_letterbox(wide_current_warp, 'Wide warp (current)', 'uses rpyCalib only'),
+    compare_resize_letterbox(wide_proposed_warp, 'Wide warp (proposed)', f'uses wideFromDevice deg: {deg_str(adjusted_wide)}'),
+    compare_resize_letterbox(diff_heatmap, 'Abs diff heatmap', f"mean={diff_metrics['mean_abs_diff_gray']:.2f}, gt16={diff_metrics['pixels_gt_16']*100:.1f}%"),
+  ])
+  canvas = cv2.vconcat([top, bottom])
+  metrics = {
+    'sample_index': sample.sample_idx,
+    'sample_log_mono_time': sample.log_mono_time,
+    'sample_road_frame_id': sample.road_frame_id,
+    'sample_wide_frame_id': sample.wide_frame_id,
+    'adjusted_rpy_deg': np.degrees(adjusted_rpy).tolist(),
+    'adjusted_wide_from_device_deg': np.degrees(adjusted_wide).tolist(),
+    'diff_metrics': diff_metrics,
+  }
+  return canvas, metrics
+
+
 def build_live_bundles(sample: Sample, camera: CameraContext, panel_size: tuple[int, int],
                        calib_offset_euler: np.ndarray, wide_offset_euler: np.ndarray) -> tuple[ProjectionBundle, ProjectionBundle]:
   narrow_calibration = compute_view_from_calib(sample.calibration.rpy_calib, calib_offset_euler)
@@ -753,6 +846,12 @@ class WideOverlayDebuggerModel:
     self.set_last_path('last_export_path', str(raw_path))
     return raw_path, json_path
 
+  def render_current_warp_compare(self) -> tuple[np.ndarray, dict]:
+    sample = self.current_sample()
+    road_bgr = self.road_cache.get(sample.road_video_idx)
+    wide_bgr = self.wide_cache.get(sample.wide_video_idx)
+    return render_warp_compare_canvas(sample, self.camera, road_bgr, wide_bgr, self.calib_offset_euler, self.wide_offset_euler)
+
   def get_last_path(self, key: str, fallback: str) -> str:
     val = self.tool_state.get(key)
     if isinstance(val, str) and val:
@@ -855,6 +954,54 @@ def run_qt_viewer(model: WideOverlayDebuggerModel, args: argparse.Namespace) -> 
       for control, val in zip(self.controls, vals, strict=True):
         control.set_value(float(val))
 
+  class WarpCompareDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+      super().__init__(parent)
+      self.setWindowTitle('Wide Warp Compare')
+      self.resize(1500, 900)
+      layout = QtWidgets.QVBoxLayout(self)
+      self.image_label = QtWidgets.QLabel(alignment=QtCore.Qt.AlignCenter)
+      self.image_label.setBackgroundRole(QtGui.QPalette.Base)
+      self.image_label.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+      self.image_label.setScaledContents(False)
+      self.scroll = QtWidgets.QScrollArea()
+      self.scroll.setWidget(self.image_label)
+      self.scroll.setWidgetResizable(True)
+      layout.addWidget(self.scroll, 1)
+      self.metrics_text = QtWidgets.QPlainTextEdit()
+      self.metrics_text.setReadOnly(True)
+      self.metrics_text.setMaximumBlockCount(2000)
+      self.metrics_text.setMinimumHeight(180)
+      layout.addWidget(self.metrics_text)
+      self._base_pixmap: QtGui.QPixmap | None = None
+
+    def _update_pixmap_fit(self) -> None:
+      if self._base_pixmap is None:
+        return
+      viewport = self.scroll.viewport().size()
+      if viewport.width() <= 0 or viewport.height() <= 0:
+        return
+      fitted = self._base_pixmap.scaled(
+        viewport,
+        QtCore.Qt.KeepAspectRatio,
+        QtCore.Qt.SmoothTransformation,
+      )
+      self.image_label.setPixmap(fitted)
+      self.image_label.resize(fitted.size())
+
+    def resizeEvent(self, event) -> None:
+      super().resizeEvent(event)
+      self._update_pixmap_fit()
+
+    def set_content(self, canvas_bgr: np.ndarray, metrics: dict) -> None:
+      canvas_rgb = cv2.cvtColor(canvas_bgr, cv2.COLOR_BGR2RGB)
+      h, w, c = canvas_rgb.shape
+      qimage = QtGui.QImage(canvas_rgb.data, w, h, c * w, QtGui.QImage.Format_RGB888).copy()
+      self._base_pixmap = QtGui.QPixmap.fromImage(qimage)
+      self._update_pixmap_fit()
+      self.metrics_text.setPlainText(json.dumps(metrics, indent=2, ensure_ascii=True))
+
+
   class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
       super().__init__()
@@ -866,6 +1013,7 @@ def run_qt_viewer(model: WideOverlayDebuggerModel, args: argparse.Namespace) -> 
       self._last_saved = args.save or model.get_last_path('last_snapshot_path', str(Path.home() / 'wide_overlay_debugger.png'))
       self._canvas_rgb: np.ndarray | None = None
       self._base_pixmap: QtGui.QPixmap | None = None
+      self._compare_dialog = None
 
       central = QtWidgets.QWidget()
       self.setCentralWidget(central)
@@ -948,10 +1096,12 @@ def run_qt_viewer(model: WideOverlayDebuggerModel, args: argparse.Namespace) -> 
       self.reset_btn = QtWidgets.QPushButton("Reset Offsets")
       self.save_btn = QtWidgets.QPushButton("Save Snapshot")
       self.export_btn = QtWidgets.QPushButton("Export CalibrationParams")
+      self.compare_btn = QtWidgets.QPushButton("Show Wide Warp Compare")
       action_row.addWidget(self.reset_btn)
       action_row.addWidget(self.save_btn)
       controls.addLayout(action_row)
       controls.addWidget(self.export_btn)
+      controls.addWidget(self.compare_btn)
 
       load_row = QtWidgets.QHBoxLayout()
       self.load_btn = QtWidgets.QPushButton("Load CalibrationParams")
@@ -999,6 +1149,7 @@ def run_qt_viewer(model: WideOverlayDebuggerModel, args: argparse.Namespace) -> 
       self.reset_btn.clicked.connect(self._reset_offsets)
       self.save_btn.clicked.connect(self._save_snapshot)
       self.export_btn.clicked.connect(self._export_calibration)
+      self.compare_btn.clicked.connect(self._show_warp_compare)
       self.load_btn.clicked.connect(self._load_calibration)
       self.clear_loaded_btn.clicked.connect(self._clear_loaded_calibration)
 
@@ -1073,6 +1224,7 @@ def run_qt_viewer(model: WideOverlayDebuggerModel, args: argparse.Namespace) -> 
         self._base_pixmap = QtGui.QPixmap.fromImage(qimage)
         self._update_pixmap_scale()
         self._refresh_info()
+        self._update_warp_compare_if_visible()
       finally:
         self._rendering = False
 
@@ -1113,6 +1265,21 @@ def run_qt_viewer(model: WideOverlayDebuggerModel, args: argparse.Namespace) -> 
         'Calibration Exported',
         f'Raw CalibrationParams written to:\n{raw_path}\n\nReadable summary written to:\n{json_path}\n\nOn device, the param key is CalibrationParams and the backing file is typically:\n/data/params/d/CalibrationParams',
       )
+
+    def _show_warp_compare(self) -> None:
+      if self._compare_dialog is None:
+        self._compare_dialog = WarpCompareDialog(self)
+      canvas, metrics = model.render_current_warp_compare()
+      self._compare_dialog.set_content(canvas, metrics)
+      self._compare_dialog.show()
+      self._compare_dialog.raise_()
+      self._compare_dialog.activateWindow()
+
+    def _update_warp_compare_if_visible(self) -> None:
+      if self._compare_dialog is None or not self._compare_dialog.isVisible():
+        return
+      canvas, metrics = model.render_current_warp_compare()
+      self._compare_dialog.set_content(canvas, metrics)
 
     def _load_calibration(self) -> None:
       start_path = model.get_last_path('last_load_path', args.initial_calibration or str(Path.home() / 'CalibrationParams'))
@@ -1158,6 +1325,8 @@ def run_qt_viewer(model: WideOverlayDebuggerModel, args: argparse.Namespace) -> 
         return
       self._closed = True
       self.timer.stop()
+      if self._compare_dialog is not None:
+        self._compare_dialog.close()
       model.close()
       event.accept()
       super().closeEvent(event)
