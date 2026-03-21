@@ -360,6 +360,30 @@
             },
         },
         {
+            "name": "wide_overlay",
+            "type": "python",
+            "launch":"python3",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/tools/dev",
+            "program": "./wide_overlay_debugger.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                // "DEBUG": 0,
+            },
+            "args": [
+              "/home/yj/bak/data/comma_data/tesla/20260318_c3l_data_noenage/2026-03-19--08-58-36--0"
+                // "--demo",
+                // "--qlog",
+                // "--layout=layouts/demo.xml",
+                // "/home/yj/bak/data/comma_data/EP40/PC/v0.9.5/2aef53e13714ee01|2023-11-22--20-30-20--2"
+                // "--data_dir",
+                // "/home/yj/bak/data/comma_data/EP40/20240116 2aef53e13714ee01|2024-01-16--17-03-45--1"
+                // "--route-name","2aef53e13714ee01|2024-02-01--18-01-48",
+                // "--data_dir", "/home/yj/bak/data/comma_data/EP40/20240201_地库测试_不能控车",
+            ]
+        },
+        {
               "name": "hil",
               "type": "python",
               "launch":"python3",
