@@ -352,10 +352,21 @@ def main(demo=False):
       model.lat_delay = get_lat_delay(params, sm["liveDelay"].lateralDelay)
     lat_delay = model.lat_delay + LAT_SMOOTH_SECONDS
     if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
-      device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
+      live_calib = sm["liveCalibration"]
+      device_from_calib_euler = np.array(live_calib.rpyCalib, dtype=np.float32)
+      wide_from_device_euler = None
+      if live_calib.calStatus == log.LiveCalibrationData.Status.calibrated and len(live_calib.wideFromDeviceEuler) == 3:
+        wide_from_device_euler = np.array(live_calib.wideFromDeviceEuler, dtype=np.float32)
+        if not np.isfinite(wide_from_device_euler).all():
+          wide_from_device_euler = None
       dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
-      model_transform_main = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics if main_wide_camera else dc.fcam.intrinsics, False).astype(np.float32)
-      model_transform_extra = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics, True).astype(np.float32)
+      model_transform_main = get_warp_matrix(
+        device_from_calib_euler,
+        dc.ecam.intrinsics if main_wide_camera else dc.fcam.intrinsics,
+        False,
+        wide_from_device_euler if main_wide_camera else None,
+      ).astype(np.float32)
+      model_transform_extra = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics, True, wide_from_device_euler).astype(np.float32)
       live_calib_seen = True
 
     traffic_convention = np.zeros(2)

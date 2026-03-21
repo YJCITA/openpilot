@@ -82,3 +82,18 @@ class TestCameraOffset:
     assert not np.array_equal(extra_out, extra_transform)
     assert main_out[0, 1] != 0.0
     assert main_out[0, 2] != 0.0
+
+
+  def test_get_warp_matrix_zero_camera_rotation_backward_compatible(self):
+    device_from_calib_euler = np.array([0.01, -0.02, 0.03], dtype=np.float32)
+    intrinsics = self.dc.ecam.intrinsics
+    base = get_warp_matrix(device_from_calib_euler, intrinsics, True).astype(np.float32)
+    zero_rot = get_warp_matrix(device_from_calib_euler, intrinsics, True, np.zeros(3, dtype=np.float32)).astype(np.float32)
+    np.testing.assert_allclose(base, zero_rot)
+
+  def test_get_warp_matrix_camera_rotation_changes_wide_transform(self):
+    device_from_calib_euler = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+    intrinsics = self.dc.ecam.intrinsics
+    base = get_warp_matrix(device_from_calib_euler, intrinsics, True).astype(np.float32)
+    rotated = get_warp_matrix(device_from_calib_euler, intrinsics, True, np.array([0.02, -0.03, 0.04], dtype=np.float32)).astype(np.float32)
+    assert not np.allclose(base, rotated)
