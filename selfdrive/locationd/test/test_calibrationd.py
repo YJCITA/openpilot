@@ -35,11 +35,13 @@ class TestCalibrationd:
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = random.randint(1, 10)
     msg.liveCalibration.rpyCalib = [random.random() for _ in range(3)]
+    msg.liveCalibration.wideFromDeviceEuler = [random.random() for _ in range(3)]
     msg.liveCalibration.height = [random.random() for _ in range(1)]
     Params().put("CalibrationParams", msg.to_bytes())
     c = Calibrator(param_put=True)
 
     np.testing.assert_allclose(msg.liveCalibration.rpyCalib, c.rpy)
+    np.testing.assert_allclose(msg.liveCalibration.wideFromDeviceEuler, c.wide_from_device_euler)
     np.testing.assert_allclose(msg.liveCalibration.height, c.height)
     assert msg.liveCalibration.validBlocks == c.valid_blocks
 
@@ -110,3 +112,34 @@ class TestCalibrationd:
     assert c.valid_blocks == 1
     assert c.cal_status == log.LiveCalibrationData.Status.recalibrating
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], atol=1e-2)
+
+  def test_wide_from_device_euler_stays_at_saved_value(self):
+    fixed_wide_from_device_euler = np.array([0.02, -0.03, 0.04])
+    c = Calibrator(param_put=False)
+    c.reset(wide_from_device_euler_init=fixed_wide_from_device_euler)
+
+    process_messages(c, [0.0, 0.02, 0.01], BLOCK_SIZE)
+
+    np.testing.assert_allclose(c.wide_from_device_euler, fixed_wide_from_device_euler)
+    np.testing.assert_allclose(c.wide_from_device_eulers[0], fixed_wide_from_device_euler)
+    assert not np.allclose(c.rpy, np.zeros(3))
+
+  def test_wide_from_device_euler_updates_when_toggle_disabled(self):
+    params = Params()
+    params.put_bool("FreezeWideFromDeviceEuler", False)
+    try:
+      c = Calibrator(param_put=False)
+      c.reset(wide_from_device_euler_init=np.zeros(3))
+
+      for _ in range(BLOCK_SIZE):
+        c.handle_v_ego(MIN_SPEED_FILTER + 1)
+        c.handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+                          [0.0, 0.0, 0.0],
+                          [0.02, -0.03, 0.04],
+                          [1e-3, 1e-3, 1e-3],
+                          [0.0, 0.0, HEIGHT_INIT.item()],
+                          [1e-3, 1e-3, 1e-3])
+
+      np.testing.assert_allclose(c.wide_from_device_euler, [0.02, -0.03, 0.04], atol=1e-6)
+    finally:
+      params.remove("FreezeWideFromDeviceEuler")

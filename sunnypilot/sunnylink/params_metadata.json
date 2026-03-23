@@ -117,6 +117,10 @@
     "title": "Calibration Params",
     "description": ""
   },
+  "FreezeWideFromDeviceEuler": {
+    "title": "Freeze Wide From Device Euler",
+    "description": "Keep the saved wide camera rotation from CalibrationParams instead of updating it from the model output."
+  },
   "CameraDebugExpGain": {
     "title": "Camera Debug Exp Gain",
     "description": ""

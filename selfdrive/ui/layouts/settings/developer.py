@@ -29,6 +29,10 @@ DESCRIPTIONS = {
     "Enabling Experimental mode is recommended when enabling sunnypilot longitudinal control alpha. " +
     "Changing this setting will restart sunnypilot if the car is powered on."
   ),
+  'freeze_wide_from_device_euler': tr_noop(
+    "Keep the saved wide camera rotation from CalibrationParams instead of updating it from the model output. " +
+    "Disable this to restore online wide camera rotation updates."
+  ),
 }
 
 
@@ -87,6 +91,14 @@ class DeveloperLayout(Widget):
     )
     self._on_enable_ui_debug(self._params.get_bool("ShowDebugInfo"))
 
+    self._freeze_wide_from_device_euler_toggle = toggle_item(
+      lambda: tr("Freeze Wide Camera Rotation"),
+      description=lambda: tr(DESCRIPTIONS["freeze_wide_from_device_euler"]),
+      initial_state=self._params.get_bool("FreezeWideFromDeviceEuler"),
+      callback=self._on_freeze_wide_from_device_euler,
+      enabled=ui_state.is_offroad,
+    )
+
     self._scroller = Scroller([
       self._adb_toggle,
       self._ssh_toggle,
@@ -95,6 +107,7 @@ class DeveloperLayout(Widget):
       self._long_maneuver_toggle,
       self._alpha_long_toggle,
       self._ui_debug_toggle,
+      self._freeze_wide_from_device_euler_toggle,
     ], line_separator=True, spacing=0)
 
     # Toggles should be not available to change in onroad state
@@ -142,6 +155,7 @@ class DeveloperLayout(Widget):
       ("LongitudinalManeuverMode", self._long_maneuver_toggle),
       ("AlphaLongitudinalEnabled", self._alpha_long_toggle),
       ("ShowDebugInfo", self._ui_debug_toggle),
+      ("FreezeWideFromDeviceEuler", self._freeze_wide_from_device_euler_toggle),
     ):
       item.action_item.set_state(self._params.get_bool(key))
 
@@ -150,6 +164,9 @@ class DeveloperLayout(Widget):
     gui_app.set_show_touches(state)
     gui_app.set_show_fps(state)
     gui_app.set_show_mouse_coords(state)
+
+  def _on_freeze_wide_from_device_euler(self, state: bool):
+    self._params.put_bool("FreezeWideFromDeviceEuler", state)
 
   def _on_enable_adb(self, state: bool):
     self._params.put_bool("AdbEnabled", state)

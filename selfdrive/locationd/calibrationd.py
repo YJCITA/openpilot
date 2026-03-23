@@ -37,6 +37,10 @@ RPY_INIT = np.array([0.0,0.0,0.0])
 WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
 HEIGHT_INIT = np.array([1.22])
 
+# Keep the offline-tuned wide camera rotation from CalibrationParams instead of
+# letting the model's wide_from_device_euler head update it online.
+FREEZE_WIDE_FROM_DEVICE_EULER_PARAM = "FreezeWideFromDeviceEuler"
+
 # These values are needed to accommodate the model frame in the narrow cam
 if HARDWARE.get_device_type() == 'mici':
   PITCH_LIMITS = np.array([-0.143101, 0.22235988])
@@ -68,6 +72,7 @@ class Calibrator:
 
     # Read saved calibration
     self.params = Params()
+    self.freeze_wide_from_device_euler = self.params.get_bool(FREEZE_WIDE_FROM_DEVICE_EULER_PARAM)
     calibration_params = self.params.get("CalibrationParams")
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
@@ -162,12 +167,30 @@ class Calibrator:
     # TODO: add height spread check with smooth transition too
     spread_too_high = self.calib_spread[1] > MAX_ALLOWED_PITCH_SPREAD or self.calib_spread[2] > MAX_ALLOWED_YAW_SPREAD
     if spread_too_high and self.cal_status == log.LiveCalibrationData.Status.calibrated:
-      self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, smooth_from=self.rpy)
+      reset_kwargs = {"smooth_from": self.rpy}
+      if self.freeze_wide_from_device_euler:
+        reset_kwargs["wide_from_device_euler_init"] = self.wide_from_device_euler
+      self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, **reset_kwargs)
       self.cal_status = log.LiveCalibrationData.Status.recalibrating
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
       self.params.put_nonblocking("CalibrationParams", self.get_msg(True).to_bytes())
+
+  def update_params(self) -> None:
+    freeze_wide_from_device_euler = self.params.get_bool(FREEZE_WIDE_FROM_DEVICE_EULER_PARAM)
+    if freeze_wide_from_device_euler and not self.freeze_wide_from_device_euler:
+      calibration_params = self.params.get("CalibrationParams")
+      if calibration_params:
+        try:
+          with log.Event.from_bytes(calibration_params) as msg:
+            saved_wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
+            if np.isfinite(saved_wide_from_device_euler).all() and len(saved_wide_from_device_euler) == 3:
+              self.wide_from_device_euler = saved_wide_from_device_euler.copy()
+              self.wide_from_device_eulers[:] = saved_wide_from_device_euler
+        except Exception:
+          cloudlog.exception("Error reading cached CalibrationParams while freezing wideFromDeviceEuler")
+    self.freeze_wide_from_device_euler = freeze_wide_from_device_euler
 
   def handle_v_ego(self, v_ego: float) -> None:
     self.v_ego = v_ego
@@ -205,19 +228,19 @@ class Calibrator:
     new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 
-    if len(wide_from_device_euler) == 3:
-      new_wide_from_device_euler = np.array(wide_from_device_euler)
-    else:
-      new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
-
     if (len(road_transform_trans) == 3):
       new_height = np.array([road_transform_trans[2]])
     else:
       new_height = HEIGHT_INIT
 
     self.rpys[self.block_idx] = moving_avg_with_linear_decay(self.rpys[self.block_idx], new_rpy, self.idx, float(BLOCK_SIZE))
-    self.wide_from_device_eulers[self.block_idx] = moving_avg_with_linear_decay(self.wide_from_device_eulers[self.block_idx],
-                                                                                new_wide_from_device_euler, self.idx, float(BLOCK_SIZE))
+    if not self.freeze_wide_from_device_euler:
+      if len(wide_from_device_euler) == 3:
+        new_wide_from_device_euler = np.array(wide_from_device_euler)
+      else:
+        new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
+      self.wide_from_device_eulers[self.block_idx] = moving_avg_with_linear_decay(self.wide_from_device_eulers[self.block_idx],
+                                                                                  new_wide_from_device_euler, self.idx, float(BLOCK_SIZE))
     self.heights[self.block_idx] = moving_avg_with_linear_decay(self.heights[self.block_idx], new_height, self.idx, float(BLOCK_SIZE))
 
     self.idx = (self.idx + 1) % BLOCK_SIZE
@@ -273,6 +296,8 @@ def main() -> NoReturn:
   while 1:
     timeout = 0 if sm.frame == -1 else 100
     sm.update(timeout)
+
+    calibrator.update_params()
 
     if sm.updated['cameraOdometry']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
