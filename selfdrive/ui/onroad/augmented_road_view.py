@@ -141,7 +141,8 @@ class AugmentedRoadView(CameraView, AugmentedRoadViewSP):
         target = self.stream_type
     else:
       target = ROAD_CAM
-
+    # -YJ-
+    target = ROAD_CAM
     if self.stream_type != target:
       self.switch_stream(target)
 

@@ -106,6 +106,9 @@ SKILL.md
 AGENTS.md
 .ai
 
+.docker-cache
+.codex
+
 ### JetBrains ###
 !.idea/customTargets.xml
 !.idea/tools/*
