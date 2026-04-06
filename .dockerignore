@@ -16,3 +16,12 @@
 
 venv/
 .venv/
+.ai/
+.vscode/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.sconsign.dblite
+compile_commands.json
+selfdrive/ui/ui
+tools/cabana/cabana

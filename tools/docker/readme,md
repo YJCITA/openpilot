@@ -1,0 +1,10 @@
+bash tools/docker/build_image.sh
+JOBS=4 bash tools/docker/build_project.sh
+
+几点你最需要知道的：
+
+第一次 build_image.sh 还是会慢，因为会走 .docker-cache/ 下载和镜像构建。
+现在脚本默认会用仓库里的 .docker-cache/ 作为 Docker 运行时目录和 SCons 缓存。
+run_ui.sh 会自动处理 host D-Bus 和 apparmor=unconfined，这是为了让 UI 在桌面 Linux 上正常初始化网络相关功能。
+headless smoke test 里如果看到 No LTE connection found 这类提示，不算失败；关键是 UI 进程能起来并由 timeout 正常结束。
+我没有动你工作区里那些和这次 Docker 流程无关的现有改动。
