@@ -59,7 +59,9 @@ def build_egpu_sidebar_status(*, present: bool, compiled: bool, link_state: str 
     return EgpuSidebarStatus("PCIE ERR", "danger", f"USB 正常，但 PCIe 未进入 L0（LTSSM {ltssm}）")
   if link_state == "check_error":
     return EgpuSidebarStatus("LINK ERR", "danger", "无法被动读取 PCIe 链路状态")
-  if link_state != "ready":
+  # SuperSpeed already confirmed by USB; missing chestnutState is the publisher
+  # restart window, not a PCIe fault. Keep the idle/active path instead of CHECKING/ERR.
+  if link_state != "ready" and not (link_state == "unchecked" and usb_speed_mbps >= 5000):
     return EgpuSidebarStatus("CHECKING", "warning", f"USB {usb_speed_mbps or '?'} Mbps，正在确认 PCIe 状态")
   if not compiled:
     return EgpuSidebarStatus("NO MODEL", "warning", "USB/PCIe 正常，但默认大模型尚未编译")
@@ -78,10 +80,10 @@ def classify_egpu_link_state(*, present: bool, usb_speed_mbps: int, telemetry_al
     return "disconnected"
   if usb_speed_mbps < 5000:
     return "usb_degraded"
-  if not telemetry_alive:
+  # modeld -> offroad statusd handoff leaves chestnutState briefly dead/invalid.
+  # That is not a link failure; wait for the next valid LTSSM instead of LINK ERR.
+  if not telemetry_alive or not telemetry_valid:
     return "unchecked"
-  if not telemetry_valid:
-    return "check_error"
   if pcie_ltssm != 0x78:
     return "pcie_down"
   return "ready"
@@ -115,14 +117,16 @@ def build_egpu_status(*, connected: bool, compiled: bool, loading: bool, active:
                       power_w: float = 0.0, temp_c: float = 0.0, memory_temp_c: float = 0.0,
                       memory_used_mb: int = 0, memory_total_mb: int = 0,
                       gpu_usage_percent: int = 0, gpu_clock_mhz: int = 0,
-                      fan_speed_rpm: int = 0) -> EgpuStatus:
+                      fan_speed_rpm: int = 0,
+                      model_started: bool = False) -> EgpuStatus:
   if not connected:
     return EgpuStatus(False, False, "", ())
 
   model_label = model_name.strip() or "大模型"
   if not compiled:
     return EgpuStatus(True, False, f"{model_label} · 大模型未编译", ())
-  if loading:
+  starting = bool(active is True and not model_alive and not model_started)
+  if loading or starting:
     return EgpuStatus(True, False, f"{model_label} · 正在加载大模型 · {loading_progress}%", ())
   if active is False:
     return EgpuStatus(True, False, f"{model_label} · 大模型失败 · 已回退小模型", ())
@@ -151,7 +155,8 @@ def build_compact_egpu_status(*, connected: bool, compiled: bool, loading: bool,
                               model_fps: float = 0.0, power_w: float = 0.0,
                               temp_c: float = 0.0, memory_temp_c: float = 0.0,
                               memory_used_mb: int = 0, memory_total_mb: int = 0,
-                              gpu_usage_percent: int = 0) -> CompactEgpuStatus:
+                              gpu_usage_percent: int = 0,
+                              model_started: bool = False) -> CompactEgpuStatus:
   """Compact model/GPU status for the left side of the bottom onroad strip."""
   if not connected:
     return CompactEgpuStatus(False, False, "")
@@ -159,7 +164,8 @@ def build_compact_egpu_status(*, connected: bool, compiled: bool, loading: bool,
   model_label = model_name.strip() or "MODEL"
   if not compiled:
     return CompactEgpuStatus(True, False, f"{model_label}: NO MODEL")
-  if loading:
+  starting = bool(active is True and not model_alive and not model_started)
+  if loading or starting:
     return CompactEgpuStatus(True, False, f"{model_label}: LOAD {loading_progress}%")
   if active is False:
     return CompactEgpuStatus(True, False, f"{model_label}: ERR")
@@ -208,6 +214,7 @@ def draw_egpu_status_panel(rect: rl.Rectangle, font: rl.Font, *, compact: bool) 
     active=ui_state.usbgpu_active, model_alive=model_alive, model_big=model_big,
     model_name=model_name,
     loading_progress=ui_state.usbgpu_loading_progress,
+    model_started=model_seen,
     telemetry_valid=telemetry_valid, usb_speed_mbps=chestnut_usb_speed_mbps(sm["deviceState"]),
     model_fps=float(telemetry.modelFps), power_w=float(telemetry.powerDrawW),
     temp_c=float(telemetry.tempC), memory_temp_c=float(telemetry.memoryTempC),

@@ -180,3 +180,47 @@ def test_sidebar_link_classification_uses_existing_chestnut_telemetry():
   assert classify_egpu_link_state(
     present=True, usb_speed_mbps=5000, telemetry_alive=True, telemetry_valid=True, pcie_ltssm=0x78,
   ) == "ready"
+
+
+def test_compact_bottom_status_keeps_loading_until_first_model_frame():
+  status = build_compact_egpu_status(
+    connected=True, compiled=True, loading=False, active=True,
+    model_alive=False, model_big=False, telemetry_valid=False,
+    model_name="TT", loading_progress=100,
+  )
+  assert status.visible
+  assert status.text == "TT: LOAD 100%"
+  assert "ERR" not in status.text
+
+
+def test_compact_bottom_status_reports_stream_error_only_after_model_started():
+  status = build_compact_egpu_status(
+    connected=True, compiled=True, loading=False, active=True,
+    model_alive=False, model_big=False, telemetry_valid=False,
+    model_name="TT", loading_progress=100, model_started=True,
+  )
+  assert status.text == "TT: STREAM ERR"
+
+  status = build_compact_egpu_status(
+    connected=True, compiled=True, loading=False, active=True,
+    model_alive=True, model_big=False, telemetry_valid=False,
+    model_name="TT",
+  )
+  assert status.text == "TT: STREAM ERR"
+
+
+def test_sidebar_home_does_not_treat_telemetry_handoff_as_error():
+  assert classify_egpu_link_state(
+    present=True, usb_speed_mbps=5000, telemetry_alive=False, telemetry_valid=False, pcie_ltssm=0,
+  ) == "unchecked"
+  assert classify_egpu_link_state(
+    present=True, usb_speed_mbps=5000, telemetry_alive=True, telemetry_valid=False, pcie_ltssm=0,
+  ) == "unchecked"
+
+  status = build_egpu_sidebar_status(
+    present=True, compiled=True, link_state="unchecked", usb_speed_mbps=5000,
+    pcie_ltssm=None, eject_status=None, loading=False, active=None,
+  )
+  assert status.value == "READY"
+  assert status.severity == "good"
+  assert "ERR" not in status.value

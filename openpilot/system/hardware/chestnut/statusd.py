@@ -59,6 +59,11 @@ def main() -> None:
 
   while True:
     sm.update(0)
+    # First ticks after onroad modeld exits have no deviceState yet. Publishing
+    # valid=False/ltssm=0 here makes the home sidebar flash LINK/PCIE ERR.
+    if not sm.alive["deviceState"] and not sm.valid["deviceState"]:
+      rk.keep_time()
+      continue
     connected, speed = _chestnut_usb(sm["deviceState"])
     valid, ltssm = probe.update(connected=connected, usb_speed_mbps=speed)
     msg = messaging.new_message("chestnutState", valid=valid)

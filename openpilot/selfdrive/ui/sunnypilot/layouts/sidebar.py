@@ -78,6 +78,7 @@ class SidebarSP:
       telemetry_valid=bool(ui_state.sm.valid["chestnutState"]),
       pcie_ltssm=int(telemetry.pcieLtssm),
     )
+    started = ui_state.started
     status = build_egpu_sidebar_status(
       present=present,
       compiled=ui_state.usbgpu_compiled,
@@ -85,10 +86,10 @@ class SidebarSP:
       usb_speed_mbps=speed_mbps,
       pcie_ltssm=int(telemetry.pcieLtssm) if ui_state.sm.valid["chestnutState"] else None,
       eject_status=eject_status,
-      loading=ui_state.usbgpu_loading,
-      active=ui_state.usbgpu_active,
+      loading=ui_state.usbgpu_loading if started else False,
+      active=ui_state.usbgpu_active if started else None,
       loading_progress=ui_state.usbgpu_loading_progress,
-      model_failed=ui_state.big_model_failed,
+      model_failed=ui_state.big_model_failed if started else False,
     )
     color = {
       "good": Colors.GOOD,

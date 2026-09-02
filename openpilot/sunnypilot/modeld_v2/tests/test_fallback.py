@@ -46,7 +46,26 @@ def test_initial_big_model_failure_falls_back_to_small():
   assert params.values["ChestnutLoading"] is False
 
 
+def test_missing_small_pkl_does_not_kill_successful_big_model(monkeypatch):
+  params = FakeParams()
+  big_model = object()
+  monkeypatch.setattr(modeld_module, "load_with_timeout", lambda load, timeout: load())
+
+  model, fallback = modeld_module.load_models_with_fallback(
+    chestnut=True,
+    load_big=lambda: big_model,
+    load_small=lambda: (_ for _ in ()).throw(AssertionError("No driving pkl found")),
+    params=params,
+    update_loading_progress=lambda _progress: None,
+  )
+
+  assert model is big_model
+  assert fallback is None
+  assert params.values["ChestnutActive"] is True
+
+
 def test_successful_big_model_keeps_preloaded_small_for_runtime_fallback(monkeypatch):
+
   params = FakeParams()
   big_model = object()
   small_model = object()

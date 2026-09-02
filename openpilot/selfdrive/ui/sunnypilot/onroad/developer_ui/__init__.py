@@ -153,6 +153,7 @@ class DeveloperUiRenderer(Widget):
       loading=ui_state.usbgpu_loading, active=ui_state.usbgpu_active,
       model_alive=model_alive, model_big=model_big, telemetry_valid=telemetry_valid,
       model_name=model_name, loading_progress=ui_state.usbgpu_loading_progress,
+      model_started=model_seen,
       model_fps=float(telemetry.modelFps), power_w=float(telemetry.powerDrawW),
       temp_c=float(telemetry.tempC), memory_temp_c=float(telemetry.memoryTempC),
       memory_used_mb=int(telemetry.memoryUsedMb), memory_total_mb=int(telemetry.memoryTotalMb),

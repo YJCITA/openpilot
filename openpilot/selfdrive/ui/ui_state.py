@@ -258,16 +258,16 @@ class UIState(UIStateSP):
       return
 
     model_seen = self.sm.recv_frame["modelV2"] > self.started_frame
+    model_alive = bool(model_seen and self.sm.alive["modelV2"])
+    model_big = bool(model_alive and self.sm["modelV2"].big)
     if not self.chestnut_present:
       self.chestnut_state = ChestnutState.DISCONNECTED
     elif not self.chestnut_compiled:
       self.chestnut_state = ChestnutState.UNCOMPILED
-    elif self.chestnut_state == ChestnutState.FAILED or not detected or (model_seen and (not self.sm.alive["modelV2"] or not self.sm["modelV2"].big)):
+    elif not detected or self.chestnut_active is False or (model_alive and not model_big):
       self.chestnut_state = ChestnutState.FAILED
-    elif self.chestnut_loading or not model_seen:
+    elif self.chestnut_loading or not model_alive:
       self.chestnut_state = ChestnutState.LOADING
-    elif self.chestnut_active is False:
-      self.chestnut_state = ChestnutState.FAILED
     else:
       self.chestnut_state = ChestnutState.ACTIVE
 

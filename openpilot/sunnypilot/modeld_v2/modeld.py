@@ -9,7 +9,7 @@ See the LICENSE.md file in the root directory for more details.
 import os
 os.environ['GMMU'] = '0'
 from openpilot.common.hardware import COMMA_HARDWARE
-from openpilot.selfdrive.modeld.helpers import chestnut_present, load_oob
+from openpilot.selfdrive.modeld.helpers import chestnut_present, load_oob, modeld_pkl_path
 from openpilot.sunnypilot.modeld_v2.egpu_loader import C3XL_MODEL_LOAD_TIMEOUT, configure_default_device, load_with_timeout
 from openpilot.sunnypilot.hardware.profile import HardwareProfile, get_hardware_profile
 configure_default_device(COMMA_HARDWARE, c3xl=get_hardware_profile() == HardwareProfile.C3XL)
@@ -61,18 +61,22 @@ def _pkl_exists(path):
   return os.path.exists(path) or os.path.exists(get_manifest_path(path))
 
 
-def _find_driving_pkl(bundle):
+def _find_driving_pkl(bundle, *, chestnut: bool = False):
   if (override := os.environ.get('COMBINED_MODEL_PKL')) and _pkl_exists(override):
     return override
-  if bundle is None or not bundle.models:
-    return None
-  from openpilot.common.hardware.hw import Paths
-  model_root = Paths.model_root()
-
-  pkl_name = bundle.models[0].artifact.fileName
-  pkl_path = os.path.join(model_root, pkl_name)
-  if _pkl_exists(pkl_path):
-    return pkl_path
+  if bundle is not None and bundle.models:
+    from openpilot.common.hardware.hw import Paths
+    model_root = Paths.model_root()
+    pkl_name = bundle.models[0].artifact.fileName
+    pkl_path = os.path.join(model_root, pkl_name)
+    if _pkl_exists(pkl_path):
+      return pkl_path
+  # qcom Default/empty slot is stock modeld; modeld_v2 still needs a pkl for
+  # chestnut runtime fallback. Use the built-in small model, never the big one.
+  if not chestnut:
+    builtin = str(modeld_pkl_path(chestnut=False))
+    if _pkl_exists(builtin):
+      return builtin
   return None
 
 
@@ -90,9 +94,15 @@ def load_models_with_fallback(*, chestnut, load_big, load_small, params, update_
       params.put_bool("ChestnutActive", True, block=True)
       update_loading_progress(100)
 
-  params.put_bool("ChestnutLoading", False, block=True)
   if model is None or chestnut:
-    small_model = load_small()
+    try:
+      small_model = load_small()
+    except Exception:
+      cloudlog.exception("small model load failed")
+      if model is None:
+        raise
+      small_model = None
+  params.put_bool("ChestnutLoading", False, block=True)
   if model is None:
     model = small_model
   assert model is not None
@@ -107,7 +117,8 @@ def run_model_with_fallback(model, small_model, params, chestnut_state, bufs, tr
       raise
     cloudlog.exception("chestnut failed, falling back to small")
     params.put_bool("ChestnutActive", False, block=True)
-    assert small_model is not None
+    if small_model is None:
+      raise
     if chestnut_state is not None:
       chestnut_state.big = False
     return small_model, None, True
@@ -150,7 +161,7 @@ class ModelState(ModelStateBase):
     self.PLANPLUS_CONTROL: float = 1.0
     self.chestnut = chestnut
 
-    pkl_path = _find_driving_pkl(model_bundle)
+    pkl_path = _find_driving_pkl(model_bundle, chestnut=chestnut)
     assert pkl_path is not None, "No driving pkl found — all models must be compiled with compile_modeld.py"
     self._init_combined(pkl_path, cam_w, cam_h, model_bundle, loading_progress_callback)
 
